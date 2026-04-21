@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NCC Email Signature — App Preview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: #e9ebee;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 20px;
+      color: #333;
+    }
+
+    .frame {
+      background: #ffffff;
+      border: 1px solid #d0d3d8;
+      border-radius: 6px;
+      box-shadow: 0 14px 40px rgba(0,0,0,0.12);
+      width: 360px;
+      overflow: hidden;
+    }
+
+    /* Fake Outlook pane header strip */
+    .outlook-bar {
+      background: #f3f2f1;
+      border-bottom: 1px solid #d9d9d9;
+      padding: 6px 12px;
+      font-size: 10.5px;
+      color: #555;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .outlook-bar .dots { color: #bbb; letter-spacing: 2px; }
+
+    .taskpane {
+      background: #fff;
+      font-size: 13px;
+    }
+
+    .tp-header {
+      background: #003C38;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .tp-logo { height: 46px; width: auto; flex-shrink: 0; display: block; }
+    .tp-title {
+      color: #fff;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 0.3px;
+    }
+    .tp-sub {
+      color: rgba(255,255,255,0.75);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .section {
+      padding: 14px 16px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: bold;
+      color: #005953;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 10px;
+    }
+
+    .locked-field {
+      background: #f7f7f7;
+      border: 1px solid #e8e8e8;
+      border-radius: 4px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: #555;
+    }
+    .locked-field .label {
+      font-size: 10px;
+      color: #999;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .locked-badge {
+      float: right;
+      font-size: 9px;
+      background: #e8e8e8;
+      color: #888;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-top: 1px;
+    }
+
+    .it-disclaimer {
+      font-size: 10.5px;
+      color: #888;
+      line-height: 1.4;
+      margin-top: 4px;
+      padding: 8px 10px;
+      background: #fbfaf5;
+      border-left: 2px solid #e6d89a;
+      border-radius: 0 3px 3px 0;
+    }
+    .it-disclaimer strong { color: #6b5a1f; }
+
+    label.field-label {
+      display: block;
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+    label.field-label:first-of-type { margin-top: 0; }
+
+    .hint {
+      font-size: 10px;
+      color: #aaa;
+      margin-top: 3px;
+    }
+
+    select, input[type="text"] {
+      width: 100%;
+      padding: 7px 9px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 12px;
+      color: #333;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    select:focus, input[type="text"]:focus { border-color: #005953; }
+
+    .custom-input-wrap { margin-top: 6px; }
+
+    .btn-save, .btn-insert {
+      display: block;
+      width: 100%;
+      padding: 9px;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: background 0.15s;
+      margin-top: 8px;
+    }
+    .btn-save { background: #005953; margin-top: 14px; }
+    .btn-save:hover { background: #004540; }
+    .btn-insert { background: #ec3426; }
+    .btn-insert:hover { background: #c62b1f; }
+
+    .status {
+      font-size: 11px;
+      color: #005953;
+      margin-top: 8px;
+      min-height: 16px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="frame">
+
+    <div class="outlook-bar">
+      <span>NCC Signature</span>
+      <span class="dots">&#10005;</span>
+    </div>
+
+    <div class="taskpane">
+
+      <div class="tp-header">
+        <img class="tp-logo" src="logo.png" alt="Nambour Christian College" />
+        <div>
+          <div class="tp-title">Email Signature Client</div>
+          <div class="tp-sub">NCC Education Group</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Your Details</div>
+
+        <div class="locked-field">
+          <span class="label">Name <span class="locked-badge">auto</span></span>
+          <strong>Harrison Black</strong>
+        </div>
+
+        <div class="locked-field">
+          <span class="label">Role <span class="locked-badge">auto</span></span>
+          <span>Marketing &amp; Communications Assistant</span>
+        </div>
+
+        <div class="locked-field">
+          <span class="label">Email <span class="locked-badge">auto</span></span>
+          <span>harrison.black@ncc.qld.edu.au</span>
+        </div>
+
+        <div class="it-disclaimer">
+          <strong>Need to change these?</strong> Name, role and email come from your M365 profile. Contact IT to update them.
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Customise</div>
+
+        <label class="field-label" for="title-select">Title</label>
+        <select id="title-select">
+          <option value="">— none —</option>
+          <option value="Mr">Mr</option>
+          <option value="Mrs">Mrs</option>
+          <option value="Ms">Ms</option>
+          <option value="Miss">Miss</option>
+          <option value="Dr">Dr</option>
+          <option value="Rev">Rev</option>
+          <option value="Pastor">Pastor</option>
+        </select>
+
+        <label class="field-label" for="newSignoff-select">Sign-off — new messages</label>
+        <select id="newSignoff-select">
+          <option value="Kind regards">Kind regards</option>
+          <option value="Warm regards">Warm regards</option>
+          <option value="Blessings" selected>Blessings</option>
+          <option value="Thanks">Thanks</option>
+          <option value="Many thanks">Many thanks</option>
+          <option value="custom">Custom...</option>
+        </select>
+
+        <label class="field-label" for="replySignoff-select">Sign-off — replies</label>
+        <select id="replySignoff-select">
+          <option value="Kind regards">Kind regards</option>
+          <option value="Warm regards">Warm regards</option>
+          <option value="Blessings">Blessings</option>
+          <option value="Thanks" selected>Thanks</option>
+          <option value="Many thanks">Many thanks</option>
+          <option value="custom">Custom...</option>
+        </select>
+
+        <label class="field-label" for="ext-input">Extension (optional)</label>
+        <input type="text" id="ext-input" value="22485" placeholder="e.g. 1234" maxlength="10" />
+
+        <label class="field-label" for="phone-input">Direct phone (optional)</label>
+        <input type="text" id="phone-input" placeholder="e.g. (07) 5451 3300" maxlength="30" />
+
+        <button class="btn-save">Save preferences</button>
+        <div class="status"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Signature</div>
+        <button class="btn-insert">Insert into email</button>
+        <div class="status"></div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

@@ -64,18 +64,30 @@
       font-size: 13px;
     }
 
-    .taskpane .header {
-      background: #005953;
+    .taskpane .tp-header {
+      background: #003C38;
       padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 2px;
     }
-    .taskpane .header-title {
+    .taskpane .tp-logo {
+      height: 46px;
+      width: auto;
+      flex-shrink: 0;
+      display: block;
+    }
+    .taskpane .tp-header-text {
+      flex: 1;
+    }
+    .taskpane .tp-title {
       color: #fff;
       font-size: 13px;
       font-weight: bold;
       letter-spacing: 0.3px;
     }
-    .taskpane .header-sub {
-      color: rgba(255,255,255,0.7);
+    .taskpane .tp-sub {
+      color: rgba(255,255,255,0.75);
       font-size: 11px;
       margin-top: 2px;
     }
@@ -119,6 +131,18 @@
       margin-top: 1px;
     }
 
+    .it-disclaimer {
+      font-size: 10.5px;
+      color: #888;
+      line-height: 1.4;
+      margin-top: 4px;
+      padding: 8px 10px;
+      background: #fbfaf5;
+      border-left: 2px solid #e6d89a;
+      border-radius: 0 3px 3px 0;
+    }
+    .it-disclaimer strong { color: #6b5a1f; }
+
     label.field-label {
       display: block;
       font-size: 11px;
@@ -127,6 +151,12 @@
       margin-top: 10px;
     }
     label.field-label:first-of-type { margin-top: 0; }
+
+    .hint {
+      font-size: 10px;
+      color: #aaa;
+      margin-top: 3px;
+    }
 
     select, input[type="text"] {
       width: 100%;
@@ -187,7 +217,31 @@
     .preview-pane .subtitle {
       color: #777;
       font-size: 13px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
+    }
+
+    .mode-toggle {
+      display: inline-flex;
+      background: #fff;
+      border: 1px solid #d8d8d8;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+    .mode-toggle button {
+      background: transparent;
+      border: none;
+      padding: 7px 16px;
+      font-size: 12px;
+      color: #666;
+      cursor: pointer;
+      font-family: inherit;
+      letter-spacing: 0.2px;
+    }
+    .mode-toggle button.active {
+      background: #005953;
+      color: #fff;
+      font-weight: bold;
     }
 
     .email-mock {
@@ -228,7 +282,14 @@
       line-height: 1.5;
     }
 
-    /* The signature itself inherits its own inline styles */
+    .email-body .quoted-reply {
+      border-left: 2px solid #ccc;
+      padding: 6px 0 6px 12px;
+      margin-top: 24px;
+      color: #888;
+      font-size: 10pt;
+      line-height: 1.5;
+    }
 
     .note {
       background: #fff9e6;
@@ -257,9 +318,12 @@
 
     <!-- LEFT: taskpane UI -->
     <aside class="taskpane">
-      <div class="header">
-        <div class="header-title">Email Signature</div>
-        <div class="header-sub">Nambour Christian College</div>
+      <div class="tp-header">
+        <img class="tp-logo" src="logo.png" alt="Nambour Christian College" />
+        <div class="tp-header-text">
+          <div class="tp-title">Email Signature Client</div>
+          <div class="tp-sub">NCC Education Group</div>
+        </div>
       </div>
 
       <div class="section">
@@ -279,13 +343,29 @@
           <span class="label">Email <span class="locked-badge">auto</span></span>
           <span id="email">harrison.black@ncc.qld.edu.au</span>
         </div>
+
+        <div class="it-disclaimer">
+          <strong>Need to change these?</strong> Name, role and email are pulled from your M365 profile. Contact IT to update them.
+        </div>
       </div>
 
       <div class="section">
         <div class="section-label">Customise</div>
 
-        <label class="field-label" for="signoff-select">Sign-off</label>
-        <select id="signoff-select">
+        <label class="field-label" for="title-select">Title</label>
+        <select id="title-select">
+          <option value="">— none —</option>
+          <option value="Mr">Mr</option>
+          <option value="Mrs">Mrs</option>
+          <option value="Ms">Ms</option>
+          <option value="Miss">Miss</option>
+          <option value="Dr">Dr</option>
+          <option value="Rev">Rev</option>
+          <option value="Pastor">Pastor</option>
+        </select>
+
+        <label class="field-label" for="newSignoff-select">Sign-off — new messages</label>
+        <select id="newSignoff-select">
           <option value="Kind regards">Kind regards</option>
           <option value="Warm regards">Warm regards</option>
           <option value="Blessings" selected>Blessings</option>
@@ -293,14 +373,28 @@
           <option value="Many thanks">Many thanks</option>
           <option value="custom">Custom...</option>
         </select>
+        <div class="custom-input-wrap" id="newCustom-wrap" style="display:none;">
+          <input type="text" id="newSignoff-custom" placeholder="e.g. Grace and peace" maxlength="50" />
+        </div>
 
-        <div class="custom-input-wrap" id="custom-wrap" style="display:none;">
-          <label class="field-label" for="signoff-custom">Custom sign-off</label>
-          <input type="text" id="signoff-custom" placeholder="e.g. Grace and peace" maxlength="50" />
+        <label class="field-label" for="replySignoff-select">Sign-off — replies</label>
+        <select id="replySignoff-select">
+          <option value="Kind regards">Kind regards</option>
+          <option value="Warm regards">Warm regards</option>
+          <option value="Blessings">Blessings</option>
+          <option value="Thanks" selected>Thanks</option>
+          <option value="Many thanks">Many thanks</option>
+          <option value="custom">Custom...</option>
+        </select>
+        <div class="custom-input-wrap" id="replyCustom-wrap" style="display:none;">
+          <input type="text" id="replySignoff-custom" placeholder="e.g. Cheers" maxlength="50" />
         </div>
 
         <label class="field-label" for="ext-input">Extension (optional)</label>
         <input type="text" id="ext-input" value="22485" placeholder="e.g. 1234" maxlength="10" />
+
+        <label class="field-label" for="phone-input">Direct phone (optional)</label>
+        <input type="text" id="phone-input" placeholder="e.g. (07) 5451 3300" maxlength="30" />
 
         <button class="btn-save" id="btn-save">Save preferences</button>
         <div class="status" id="save-status"></div>
@@ -316,22 +410,31 @@
     <!-- RIGHT: mock email + rendered signature -->
     <main class="preview-pane">
       <h1>Live Signature Preview</h1>
-      <p class="subtitle">This mirrors exactly what staff will see when the add-in inserts their signature into a compose window. Change the sign-off or extension on the left to watch it update in real time.</p>
+      <p class="subtitle">Mirrors what staff see when the add-in inserts their signature. Toggle between new-message and reply modes to see both sign-offs in action.</p>
+
+      <div class="mode-toggle">
+        <button id="mode-new" class="active" data-mode="new">New message</button>
+        <button id="mode-reply" data-mode="reply">Reply</button>
+      </div>
 
       <div class="email-mock">
         <div class="email-header">
-          <div class="row"><span class="lbl">To:</span><span>team@ncc.qld.edu.au</span></div>
-          <div class="row"><span class="lbl">Subject:</span><span>Sample email</span></div>
+          <div class="row"><span class="lbl">To:</span><span id="mock-to">team@ncc.qld.edu.au</span></div>
+          <div class="row"><span class="lbl">Subject:</span><span id="mock-subject">Sample email</span></div>
         </div>
         <div class="email-body">
-          <p class="greeting">Hi team,</p>
-          <p class="sample-text">Just sending this through to confirm the updated plan for next week. Let me know if there are any questions or anything else you need from me.</p>
+          <p class="greeting" id="mock-greeting">Hi team,</p>
+          <p class="sample-text" id="mock-sample">Just sending this through to confirm the updated plan for next week. Let me know if there are any questions or anything else you need from me.</p>
           <div id="signature-container"></div>
+          <div class="quoted-reply" id="quoted-reply" style="display:none;">
+            <div>On Mon, 20 April 2026, <strong>Jane Doe</strong> wrote:</div>
+            <div style="margin-top:6px;">Hi Harrison, could you send through the latest draft when you get a chance?</div>
+          </div>
         </div>
       </div>
 
       <div class="note">
-        <strong>Note:</strong> In the real add-in, <em>Name</em>, <em>Role</em>, and <em>Email</em> are pulled automatically from each staff member's M365 profile via Microsoft Graph — they cannot be edited. Only the sign-off and extension are customisable.
+        <strong>Note:</strong> In the real add-in, <em>Name</em>, <em>Role</em>, and <em>Email</em> are pulled automatically from each staff member's M365 profile via Microsoft Graph — they cannot be edited. Only the title, sign-offs, extension and direct phone are customisable.
       </div>
     </main>
 
@@ -346,49 +449,64 @@
       mail: "harrison.black@ncc.qld.edu.au"
     };
 
-    function getSignoff() {
-      const sel = document.getElementById("signoff-select");
+    let currentMode = "new"; // 'new' or 'reply'
+
+    function getSignoffFor(mode) {
+      const prefix = mode === "reply" ? "replySignoff" : "newSignoff";
+      const sel = document.getElementById(prefix + "-select");
       if (sel.value === "custom") {
-        return document.getElementById("signoff-custom").value.trim() || "Kind regards";
+        return document.getElementById(prefix + "-custom").value.trim() || "Kind regards";
       }
       return sel.value;
     }
 
-    function buildSignature() {
-      const signoff = getSignoff();
-      const ext = document.getElementById("ext-input").value.trim();
+    function buildSignature(mode) {
+      const signoff = getSignoffFor(mode);
+      const title   = document.getElementById("title-select").value.trim();
+      const ext     = document.getElementById("ext-input").value.trim();
+      const phone   = document.getElementById("phone-input").value.trim();
       const { displayName, jobTitle, mail } = userProfile;
 
+      const fullName = title ? `${title} ${displayName}` : displayName;
+
       const extLine = ext
-        ? `<strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">| Ext: </span></strong><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;">${ext}</span></strong>`
+        ? ` <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">| Ext: </span></strong><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;">${ext}</span></strong>`
+        : "";
+
+      const phoneLine = phone
+        ? ` <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">| P: </span></strong><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;">${phone}</span></strong>`
         : "";
 
       return `
-<p style="margin-top:0pt;margin-bottom:0pt;line-height:normal;background-color:#ffffff;">
+<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;">${signoff},</span></strong>
 </p>
-<p style="margin-top:0pt;margin-bottom:12pt;line-height:normal;background-color:#ffffff;">
-  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#ec3426;">${displayName}</span></strong>
+<p style="margin:0pt;margin-bottom:10pt;line-height:normal;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#ec3426;">${fullName}</span></strong>
 </p>
-<p style="margin-top:0pt;margin-bottom:0pt;line-height:normal;background-color:#ffffff;">
+<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#005953;">${jobTitle}</span></strong>
 </p>
-<p style="margin-top:0pt;margin-bottom:0pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
-  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">E: </span></strong><strong><u><a href="mailto:${mail}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${mail}</a></u></strong>
-  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;"> ${extLine}</span></strong>
+<p style="margin:0pt;margin-top:4pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">E: </span></strong><strong><u><a href="mailto:${mail}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${mail}</a></u></strong>${extLine}${phoneLine}
 </p>
-<p style="margin-top:0pt;margin-bottom:8pt;">
-  <br>
-  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#005953;">Nambour Christian College</span></strong><br>
-  <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#333333;">2 McKenzie Road, Woombye QLD 4559 | PO Box 500, Nambour QLD 4560</span><br>
-  <a href="tel:+61754513333" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">(07) 5451 3333 </span></strong></a><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;">|</span>
-  <a href="mailto:info@ncc.qld.edu.au" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;"> info@ncc.qld.edu.au</span></strong></a>
-  <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;">|</span><a href="https://www.ncc.qld.edu.au" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;"> www.ncc.qld.edu.au</span></strong></a>
+<p style="margin:0pt;margin-top:4pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">Nambour Christian College</span></strong>
 </p>
-<p style="margin-top:0pt;margin-bottom:0pt;line-height:normal;font-size:11pt;background-color:#ffffff;">
+<p style="margin:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
+  <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#333333;">2 McKenzie Road, Woombye QLD 4559 | PO Box 500, Nambour QLD 4560</span>
+</p>
+<p style="margin:0pt;margin-bottom:8pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
+  <a href="tel:+61754513333" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">(07) 5451 3333</span></strong></a>
+  <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#333333;"> | </span>
+  <a href="mailto:info@ncc.qld.edu.au" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">info@ncc.qld.edu.au</span></strong></a>
+  <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#333333;"> | </span>
+  <a href="https://www.ncc.qld.edu.au" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">www.ncc.qld.edu.au</span></strong></a>
+</p>
+<p style="margin:0pt;line-height:normal;font-size:11pt;background-color:#ffffff;">
   <img src="${LOGO_URL}" width="430" height="143" alt="Nambour Christian College" style="display:block;border:0;">
 </p>
-<p style="margin-top:0pt;margin-bottom:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
+<p style="margin:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">CRICOS:</span></strong>
   <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#333333;"> 01461G</span>
 </p>
@@ -396,32 +514,65 @@
     }
 
     function render() {
-      document.getElementById("signature-container").innerHTML = buildSignature();
+      document.getElementById("signature-container").innerHTML = buildSignature(currentMode);
+
+      // Update mock email to reflect mode
+      const subj = document.getElementById("mock-subject");
+      const quoted = document.getElementById("quoted-reply");
+      const sample = document.getElementById("mock-sample");
+      const greeting = document.getElementById("mock-greeting");
+
+      if (currentMode === "reply") {
+        subj.textContent = "RE: Sample email";
+        quoted.style.display = "block";
+        greeting.textContent = "Hi Jane,";
+        sample.textContent = "Thanks for the reminder — attaching the latest draft now.";
+      } else {
+        subj.textContent = "Sample email";
+        quoted.style.display = "none";
+        greeting.textContent = "Hi team,";
+        sample.textContent = "Just sending this through to confirm the updated plan for next week. Let me know if there are any questions or anything else you need from me.";
+      }
     }
 
-    // Wire up events
-    const sel = document.getElementById("signoff-select");
-    sel.addEventListener("change", () => {
-      document.getElementById("custom-wrap").style.display =
-        sel.value === "custom" ? "block" : "none";
-      render();
+    // Wire up custom-input toggles
+    ["newSignoff", "replySignoff"].forEach(prefix => {
+      const sel = document.getElementById(prefix + "-select");
+      sel.addEventListener("change", () => {
+        document.getElementById(prefix === "newSignoff" ? "newCustom-wrap" : "replyCustom-wrap").style.display =
+          sel.value === "custom" ? "block" : "none";
+        render();
+      });
+      document.getElementById(prefix + "-custom").addEventListener("input", render);
     });
-    document.getElementById("signoff-custom").addEventListener("input", render);
-    document.getElementById("ext-input").addEventListener("input", render);
 
+    // Other field listeners
+    document.getElementById("title-select").addEventListener("change", render);
+    document.getElementById("ext-input").addEventListener("input", render);
+    document.getElementById("phone-input").addEventListener("input", render);
+
+    // Mode toggle
+    document.querySelectorAll(".mode-toggle button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".mode-toggle button").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentMode = btn.dataset.mode;
+        render();
+      });
+    });
+
+    // Demo button handlers
     document.getElementById("btn-save").addEventListener("click", () => {
       const s = document.getElementById("save-status");
       s.textContent = "\u2713 Saved (demo — nothing actually persisted)";
       setTimeout(() => { s.textContent = ""; }, 2500);
     });
-
     document.getElementById("btn-insert").addEventListener("click", () => {
       const s = document.getElementById("insert-status");
-      s.textContent = "\u2713 Signature inserted (already in preview on the right)";
+      s.textContent = "\u2713 Signature inserted (already showing on the right)";
       setTimeout(() => { s.textContent = ""; }, 2500);
     });
 
-    // Initial render
     render();
   </script>
 </body>

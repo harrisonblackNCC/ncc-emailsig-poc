@@ -9,30 +9,38 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
       background: #ffffff;
       color: #333333;
       font-size: 13px;
     }
 
-    .header {
-      background: #005953;
+    .tp-header {
+      background: #003C38;
       padding: 14px 16px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 2px;
     }
+    .tp-logo {
+      height: 46px;
+      width: auto;
+      flex-shrink: 0;
+      display: block;
+    }
+    .tp-header-text { flex: 1; }
 
-    .header-title {
+    .tp-title {
       color: #ffffff;
       font-size: 13px;
       font-weight: bold;
       letter-spacing: 0.3px;
     }
 
-    .header-sub {
-      color: rgba(255,255,255,0.7);
+    .tp-sub {
+      color: rgba(255,255,255,0.75);
       font-size: 11px;
+      margin-top: 2px;
     }
 
     .section {
@@ -59,7 +67,7 @@
       color: #555;
     }
 
-    .locked-field span {
+    .locked-field .label {
       font-size: 10px;
       color: #999;
       display: block;
@@ -76,22 +84,39 @@
       margin-top: 1px;
     }
 
-    label {
+    .it-disclaimer {
+      font-size: 10.5px;
+      color: #888;
+      line-height: 1.4;
+      margin-top: 4px;
+      padding: 8px 10px;
+      background: #fbfaf5;
+      border-left: 2px solid #e6d89a;
+      border-radius: 0 3px 3px 0;
+    }
+    .it-disclaimer strong { color: #6b5a1f; }
+
+    label.field-label {
       display: block;
       font-size: 11px;
       color: #666;
       margin-bottom: 4px;
       margin-top: 10px;
     }
+    label.field-label:first-of-type { margin-top: 0; }
 
-    label:first-of-type { margin-top: 0; }
+    .hint {
+      font-size: 10px;
+      color: #aaa;
+      margin-top: 3px;
+    }
 
     select, input[type="text"] {
       width: 100%;
       padding: 7px 9px;
       border: 1px solid #ddd;
       border-radius: 4px;
-      font-family: Helvetica, Arial, sans-serif;
+      font-family: inherit;
       font-size: 12px;
       color: #333;
       background: #fff;
@@ -100,13 +125,9 @@
       transition: border-color 0.15s;
     }
 
-    select:focus, input[type="text"]:focus {
-      border-color: #005953;
-    }
+    select:focus, input[type="text"]:focus { border-color: #005953; }
 
-    .custom-input-wrap {
-      margin-top: 6px;
-    }
+    .custom-input-wrap { margin-top: 6px; }
 
     .btn-save {
       display: block;
@@ -116,7 +137,7 @@
       color: #fff;
       border: none;
       border-radius: 4px;
-      font-family: Helvetica, Arial, sans-serif;
+      font-family: inherit;
       font-size: 12px;
       font-weight: bold;
       cursor: pointer;
@@ -124,7 +145,6 @@
       transition: background 0.15s;
       margin-top: 14px;
     }
-
     .btn-save:hover { background: #004540; }
     .btn-save:disabled { background: #ccc; cursor: default; }
 
@@ -136,7 +156,7 @@
       color: #fff;
       border: none;
       border-radius: 4px;
-      font-family: Helvetica, Arial, sans-serif;
+      font-family: inherit;
       font-size: 12px;
       font-weight: bold;
       cursor: pointer;
@@ -144,7 +164,6 @@
       transition: background 0.15s;
       margin-top: 8px;
     }
-
     .btn-insert:hover { background: #c62b1f; }
 
     .status {
@@ -156,19 +175,6 @@
     }
 
     .status.error { color: #ec3426; }
-
-    .preview-section {
-      padding: 14px 16px;
-    }
-
-    .preview-box {
-      border: 1px solid #e8e8e8;
-      border-radius: 4px;
-      padding: 12px;
-      background: #fafafa;
-      font-size: 11px;
-      line-height: 1.5;
-    }
 
     .loading {
       padding: 24px 16px;
@@ -192,10 +198,11 @@
 </head>
 <body>
 
-  <div class="header">
-    <div>
-      <div class="header-title">Email Signature</div>
-      <div class="header-sub">Nambour Christian College</div>
+  <div class="tp-header">
+    <img class="tp-logo" src="logo.png" alt="Nambour Christian College" />
+    <div class="tp-header-text">
+      <div class="tp-title">Email Signature Client</div>
+      <div class="tp-sub">NCC Education Group</div>
     </div>
   </div>
 
@@ -211,18 +218,22 @@
       <div class="section-label">Your Details</div>
 
       <div class="locked-field">
-        <span>Name <span class="locked-badge">auto</span></span>
+        <span class="label">Name <span class="locked-badge">auto</span></span>
         <strong id="display-name">—</strong>
       </div>
 
       <div class="locked-field">
-        <span>Role <span class="locked-badge">auto</span></span>
+        <span class="label">Role <span class="locked-badge">auto</span></span>
         <span id="job-title">—</span>
       </div>
 
       <div class="locked-field">
-        <span>Email <span class="locked-badge">auto</span></span>
+        <span class="label">Email <span class="locked-badge">auto</span></span>
         <span id="email">—</span>
+      </div>
+
+      <div class="it-disclaimer">
+        <strong>Need to change these?</strong> Name, role and email come from your M365 profile. Contact IT to update them.
       </div>
     </div>
 
@@ -230,8 +241,20 @@
     <div class="section">
       <div class="section-label">Customise</div>
 
-      <label for="signoff-select">Sign-off</label>
-      <select id="signoff-select">
+      <label class="field-label" for="title-select">Title</label>
+      <select id="title-select">
+        <option value="">— none —</option>
+        <option value="Mr">Mr</option>
+        <option value="Mrs">Mrs</option>
+        <option value="Ms">Ms</option>
+        <option value="Miss">Miss</option>
+        <option value="Dr">Dr</option>
+        <option value="Rev">Rev</option>
+        <option value="Pastor">Pastor</option>
+      </select>
+
+      <label class="field-label" for="newSignoff-select">Sign-off — new messages</label>
+      <select id="newSignoff-select">
         <option value="Kind regards">Kind regards</option>
         <option value="Warm regards">Warm regards</option>
         <option value="Blessings">Blessings</option>
@@ -239,14 +262,28 @@
         <option value="Many thanks">Many thanks</option>
         <option value="custom">Custom...</option>
       </select>
-
-      <div class="custom-input-wrap" id="custom-wrap" style="display:none;">
-        <label for="signoff-custom">Custom sign-off</label>
-        <input type="text" id="signoff-custom" placeholder="e.g. Grace and peace" maxlength="50" />
+      <div class="custom-input-wrap" id="newCustom-wrap" style="display:none;">
+        <input type="text" id="newSignoff-custom" placeholder="e.g. Grace and peace" maxlength="50" />
       </div>
 
-      <label for="ext-input">Extension (optional)</label>
+      <label class="field-label" for="replySignoff-select">Sign-off — replies</label>
+      <select id="replySignoff-select">
+        <option value="Kind regards">Kind regards</option>
+        <option value="Warm regards">Warm regards</option>
+        <option value="Blessings">Blessings</option>
+        <option value="Thanks">Thanks</option>
+        <option value="Many thanks">Many thanks</option>
+        <option value="custom">Custom...</option>
+      </select>
+      <div class="custom-input-wrap" id="replyCustom-wrap" style="display:none;">
+        <input type="text" id="replySignoff-custom" placeholder="e.g. Cheers" maxlength="50" />
+      </div>
+
+      <label class="field-label" for="ext-input">Extension (optional)</label>
       <input type="text" id="ext-input" placeholder="e.g. 1234" maxlength="10" />
+
+      <label class="field-label" for="phone-input">Direct phone (optional)</label>
+      <input type="text" id="phone-input" placeholder="e.g. (07) 5451 3300" maxlength="30" />
 
       <button class="btn-save" id="btn-save">Save preferences</button>
       <div class="status" id="save-status"></div>
