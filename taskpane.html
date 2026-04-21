@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NCC Email Signature</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Helvetica, Arial, sans-serif;
+      background: #ffffff;
+      color: #333333;
+      font-size: 13px;
+    }
+
+    .header {
+      background: #005953;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-title {
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 0.3px;
+    }
+
+    .header-sub {
+      color: rgba(255,255,255,0.7);
+      font-size: 11px;
+    }
+
+    .section {
+      padding: 14px 16px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: bold;
+      color: #005953;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 10px;
+    }
+
+    .locked-field {
+      background: #f7f7f7;
+      border: 1px solid #e8e8e8;
+      border-radius: 4px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: #555;
+    }
+
+    .locked-field span {
+      font-size: 10px;
+      color: #999;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .locked-badge {
+      float: right;
+      font-size: 9px;
+      background: #e8e8e8;
+      color: #888;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-top: 1px;
+    }
+
+    label {
+      display: block;
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+
+    label:first-of-type { margin-top: 0; }
+
+    select, input[type="text"] {
+      width: 100%;
+      padding: 7px 9px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 12px;
+      color: #333;
+      background: #fff;
+      appearance: none;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    select:focus, input[type="text"]:focus {
+      border-color: #005953;
+    }
+
+    .custom-input-wrap {
+      margin-top: 6px;
+    }
+
+    .btn-save {
+      display: block;
+      width: 100%;
+      padding: 9px;
+      background: #005953;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: background 0.15s;
+      margin-top: 14px;
+    }
+
+    .btn-save:hover { background: #004540; }
+    .btn-save:disabled { background: #ccc; cursor: default; }
+
+    .btn-insert {
+      display: block;
+      width: 100%;
+      padding: 9px;
+      background: #ec3426;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: background 0.15s;
+      margin-top: 8px;
+    }
+
+    .btn-insert:hover { background: #c62b1f; }
+
+    .status {
+      font-size: 11px;
+      color: #005953;
+      margin-top: 8px;
+      min-height: 16px;
+      text-align: center;
+    }
+
+    .status.error { color: #ec3426; }
+
+    .preview-section {
+      padding: 14px 16px;
+    }
+
+    .preview-box {
+      border: 1px solid #e8e8e8;
+      border-radius: 4px;
+      padding: 12px;
+      background: #fafafa;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .loading {
+      padding: 24px 16px;
+      text-align: center;
+      color: #999;
+      font-size: 12px;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #e8e8e8;
+      border-top-color: #005953;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div>
+      <div class="header-title">Email Signature</div>
+      <div class="header-sub">Nambour Christian College</div>
+    </div>
+  </div>
+
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    Loading your profile...
+  </div>
+
+  <div id="main" style="display:none;">
+
+    <!-- Locked fields -->
+    <div class="section">
+      <div class="section-label">Your Details</div>
+
+      <div class="locked-field">
+        <span>Name <span class="locked-badge">auto</span></span>
+        <strong id="display-name">—</strong>
+      </div>
+
+      <div class="locked-field">
+        <span>Role <span class="locked-badge">auto</span></span>
+        <span id="job-title">—</span>
+      </div>
+
+      <div class="locked-field">
+        <span>Email <span class="locked-badge">auto</span></span>
+        <span id="email">—</span>
+      </div>
+    </div>
+
+    <!-- Customisable fields -->
+    <div class="section">
+      <div class="section-label">Customise</div>
+
+      <label for="signoff-select">Sign-off</label>
+      <select id="signoff-select">
+        <option value="Kind regards">Kind regards</option>
+        <option value="Warm regards">Warm regards</option>
+        <option value="Blessings">Blessings</option>
+        <option value="Thanks">Thanks</option>
+        <option value="Many thanks">Many thanks</option>
+        <option value="custom">Custom...</option>
+      </select>
+
+      <div class="custom-input-wrap" id="custom-wrap" style="display:none;">
+        <label for="signoff-custom">Custom sign-off</label>
+        <input type="text" id="signoff-custom" placeholder="e.g. Grace and peace" maxlength="50" />
+      </div>
+
+      <label for="ext-input">Extension (optional)</label>
+      <input type="text" id="ext-input" placeholder="e.g. 1234" maxlength="10" />
+
+      <button class="btn-save" id="btn-save">Save preferences</button>
+      <div class="status" id="save-status"></div>
+    </div>
+
+    <!-- Insert -->
+    <div class="section">
+      <div class="section-label">Signature</div>
+      <button class="btn-insert" id="btn-insert">Insert into email</button>
+      <div class="status" id="insert-status"></div>
+    </div>
+
+  </div>
+
+  <script src="taskpane.js"></script>
+</body>
+</html>
