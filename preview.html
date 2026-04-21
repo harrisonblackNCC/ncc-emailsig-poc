@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NCC Email Signature — Preview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: #f4f4f4;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-bar {
+      background: #005953;
+      color: #fff;
+      padding: 14px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .top-bar .brand {
+      font-weight: bold;
+      letter-spacing: 0.3px;
+    }
+
+    .top-bar .brand small {
+      font-weight: normal;
+      opacity: 0.75;
+      margin-left: 10px;
+      font-size: 11px;
+    }
+
+    .top-bar .badge {
+      background: #ec3426;
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+
+    .layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Left: taskpane UI ─────────────────────────────── */
+    .taskpane {
+      width: 360px;
+      min-width: 360px;
+      background: #fff;
+      border-right: 1px solid #e0e0e0;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+
+    .taskpane .header {
+      background: #005953;
+      padding: 14px 16px;
+    }
+    .taskpane .header-title {
+      color: #fff;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 0.3px;
+    }
+    .taskpane .header-sub {
+      color: rgba(255,255,255,0.7);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .section {
+      padding: 14px 16px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: bold;
+      color: #005953;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 10px;
+    }
+
+    .locked-field {
+      background: #f7f7f7;
+      border: 1px solid #e8e8e8;
+      border-radius: 4px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: #555;
+    }
+    .locked-field .label {
+      font-size: 10px;
+      color: #999;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .locked-badge {
+      float: right;
+      font-size: 9px;
+      background: #e8e8e8;
+      color: #888;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-top: 1px;
+    }
+
+    label.field-label {
+      display: block;
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+    label.field-label:first-of-type { margin-top: 0; }
+
+    select, input[type="text"] {
+      width: 100%;
+      padding: 7px 9px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 12px;
+      color: #333;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    select:focus, input[type="text"]:focus { border-color: #005953; }
+
+    .custom-input-wrap { margin-top: 6px; }
+
+    .btn-save, .btn-insert {
+      display: block;
+      width: 100%;
+      padding: 9px;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: background 0.15s;
+      margin-top: 8px;
+    }
+    .btn-save { background: #005953; margin-top: 14px; }
+    .btn-save:hover { background: #004540; }
+    .btn-insert { background: #ec3426; }
+    .btn-insert:hover { background: #c62b1f; }
+
+    .status {
+      font-size: 11px;
+      color: #005953;
+      margin-top: 8px;
+      min-height: 16px;
+      text-align: center;
+    }
+
+    /* ── Right: email mock + signature preview ─────────── */
+    .preview-pane {
+      flex: 1;
+      padding: 28px 36px;
+      overflow-y: auto;
+    }
+
+    .preview-pane h1 {
+      font-size: 18px;
+      color: #005953;
+      margin-bottom: 4px;
+    }
+    .preview-pane .subtitle {
+      color: #777;
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+
+    .email-mock {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      max-width: 780px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+      overflow: hidden;
+    }
+
+    .email-header {
+      padding: 14px 20px;
+      background: #fafafa;
+      border-bottom: 1px solid #eee;
+      font-size: 12px;
+      color: #666;
+    }
+    .email-header .row { display: flex; padding: 3px 0; }
+    .email-header .row .lbl { width: 60px; color: #999; }
+
+    .email-body {
+      padding: 22px 26px 26px;
+      min-height: 240px;
+      font-family: Aptos, "Segoe UI", sans-serif;
+      font-size: 11pt;
+      color: #222;
+    }
+
+    .email-body .greeting {
+      color: #333;
+      margin-bottom: 14px;
+    }
+
+    .email-body .sample-text {
+      color: #555;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    /* The signature itself inherits its own inline styles */
+
+    .note {
+      background: #fff9e6;
+      border-left: 3px solid #f0c14b;
+      padding: 10px 14px;
+      margin-top: 22px;
+      font-size: 12px;
+      color: #665;
+      max-width: 780px;
+      border-radius: 0 4px 4px 0;
+    }
+    .note strong { color: #885; }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div class="brand">
+      NCC Email Signature
+      <small>POC — Live Preview</small>
+    </div>
+    <div class="badge">DEV</div>
+  </div>
+
+  <div class="layout">
+
+    <!-- LEFT: taskpane UI -->
+    <aside class="taskpane">
+      <div class="header">
+        <div class="header-title">Email Signature</div>
+        <div class="header-sub">Nambour Christian College</div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Your Details</div>
+
+        <div class="locked-field">
+          <span class="label">Name <span class="locked-badge">auto</span></span>
+          <strong id="display-name">Harrison Black</strong>
+        </div>
+
+        <div class="locked-field">
+          <span class="label">Role <span class="locked-badge">auto</span></span>
+          <span id="job-title">Marketing &amp; Communications Assistant</span>
+        </div>
+
+        <div class="locked-field">
+          <span class="label">Email <span class="locked-badge">auto</span></span>
+          <span id="email">harrison.black@ncc.qld.edu.au</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Customise</div>
+
+        <label class="field-label" for="signoff-select">Sign-off</label>
+        <select id="signoff-select">
+          <option value="Kind regards">Kind regards</option>
+          <option value="Warm regards">Warm regards</option>
+          <option value="Blessings" selected>Blessings</option>
+          <option value="Thanks">Thanks</option>
+          <option value="Many thanks">Many thanks</option>
+          <option value="custom">Custom...</option>
+        </select>
+
+        <div class="custom-input-wrap" id="custom-wrap" style="display:none;">
+          <label class="field-label" for="signoff-custom">Custom sign-off</label>
+          <input type="text" id="signoff-custom" placeholder="e.g. Grace and peace" maxlength="50" />
+        </div>
+
+        <label class="field-label" for="ext-input">Extension (optional)</label>
+        <input type="text" id="ext-input" value="22485" placeholder="e.g. 1234" maxlength="10" />
+
+        <button class="btn-save" id="btn-save">Save preferences</button>
+        <div class="status" id="save-status"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Signature</div>
+        <button class="btn-insert" id="btn-insert">Insert into email</button>
+        <div class="status" id="insert-status"></div>
+      </div>
+    </aside>
+
+    <!-- RIGHT: mock email + rendered signature -->
+    <main class="preview-pane">
+      <h1>Live Signature Preview</h1>
+      <p class="subtitle">This mirrors exactly what staff will see when the add-in inserts their signature into a compose window. Change the sign-off or extension on the left to watch it update in real time.</p>
+
+      <div class="email-mock">
+        <div class="email-header">
+          <div class="row"><span class="lbl">To:</span><span>team@ncc.qld.edu.au</span></div>
+          <div class="row"><span class="lbl">Subject:</span><span>Sample email</span></div>
+        </div>
+        <div class="email-body">
+          <p class="greeting">Hi team,</p>
+          <p class="sample-text">Just sending this through to confirm the updated plan for next week. Let me know if there are any questions or anything else you need from me.</p>
+          <div id="signature-container"></div>
+        </div>
+      </div>
+
+      <div class="note">
+        <strong>Note:</strong> In the real add-in, <em>Name</em>, <em>Role</em>, and <em>Email</em> are pulled automatically from each staff member's M365 profile via Microsoft Graph — they cannot be edited. Only the sign-off and extension are customisable.
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    const LOGO_URL = "https://www.ncc.qld.edu.au/wp-content/uploads/NCC-Email_600x200.jpg";
+
+    const userProfile = {
+      displayName: "Harrison Black",
+      jobTitle: "Marketing & Communications Assistant",
+      mail: "harrison.black@ncc.qld.edu.au"
+    };
+
+    function getSignoff() {
+      const sel = document.getElementById("signoff-select");
+      if (sel.value === "custom") {
+        return document.getElementById("signoff-custom").value.trim() || "Kind regards";
+      }
+      return sel.value;
+    }
+
+    function buildSignature() {
+      const signoff = getSignoff();
+      const ext = document.getElementById("ext-input").value.trim();
+      const { displayName, jobTitle, mail } = userProfile;
+
+      const extLine = ext
+        ? `<strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">| Ext: </span></strong><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;">${ext}</span></strong>`
+        : "";
+
+      return `
+<p style="margin-top:0pt;margin-bottom:0pt;line-height:normal;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;">${signoff},</span></strong>
+</p>
+<p style="margin-top:0pt;margin-bottom:12pt;line-height:normal;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#ec3426;">${displayName}</span></strong>
+</p>
+<p style="margin-top:0pt;margin-bottom:0pt;line-height:normal;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#005953;">${jobTitle}</span></strong>
+</p>
+<p style="margin-top:0pt;margin-bottom:0pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">E: </span></strong><strong><u><a href="mailto:${mail}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${mail}</a></u></strong>
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;"> ${extLine}</span></strong>
+</p>
+<p style="margin-top:0pt;margin-bottom:8pt;">
+  <br>
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#005953;">Nambour Christian College</span></strong><br>
+  <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#333333;">2 McKenzie Road, Woombye QLD 4559 | PO Box 500, Nambour QLD 4560</span><br>
+  <a href="tel:+61754513333" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">(07) 5451 3333 </span></strong></a><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;">|</span>
+  <a href="mailto:info@ncc.qld.edu.au" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;"> info@ncc.qld.edu.au</span></strong></a>
+  <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;">|</span><a href="https://www.ncc.qld.edu.au" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;"> www.ncc.qld.edu.au</span></strong></a>
+</p>
+<p style="margin-top:0pt;margin-bottom:0pt;line-height:normal;font-size:11pt;background-color:#ffffff;">
+  <img src="${LOGO_URL}" width="430" height="143" alt="Nambour Christian College" style="display:block;border:0;">
+</p>
+<p style="margin-top:0pt;margin-bottom:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">CRICOS:</span></strong>
+  <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#333333;"> 01461G</span>
+</p>
+`.trim();
+    }
+
+    function render() {
+      document.getElementById("signature-container").innerHTML = buildSignature();
+    }
+
+    // Wire up events
+    const sel = document.getElementById("signoff-select");
+    sel.addEventListener("change", () => {
+      document.getElementById("custom-wrap").style.display =
+        sel.value === "custom" ? "block" : "none";
+      render();
+    });
+    document.getElementById("signoff-custom").addEventListener("input", render);
+    document.getElementById("ext-input").addEventListener("input", render);
+
+    document.getElementById("btn-save").addEventListener("click", () => {
+      const s = document.getElementById("save-status");
+      s.textContent = "\u2713 Saved (demo — nothing actually persisted)";
+      setTimeout(() => { s.textContent = ""; }, 2500);
+    });
+
+    document.getElementById("btn-insert").addEventListener("click", () => {
+      const s = document.getElementById("insert-status");
+      s.textContent = "\u2713 Signature inserted (already in preview on the right)";
+      setTimeout(() => { s.textContent = ""; }, 2500);
+    });
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>
