@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>NCC Email Signature — Preview</title>
-  <link rel="icon" type="image/png" href="logo.png" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -448,11 +448,16 @@
         </div>
         <div class="email-body">
           <p class="greeting" id="mock-greeting">Hi team,</p>
-          <p class="sample-text" id="mock-sample">At NCC, we talk a lot about valuing what matters most. But lately I've been wondering what that actually looks like from the kids' perspective — in the classroom, on the playground, at the end of a long week. Keen to hear what you're noticing with your students. Maybe grab a coffee this week?</p>
+          <p class="sample-text" id="mock-sample">At NCC, we talk a lot about valuing what matters most. But lately I've been wondering what that actually looks like from the students' perspective - in the classroom, on the playground, at the end of a boring assembly. Keen to hear what you're noticing with your students.</p>
           <div id="signature-container"></div>
           <div class="quoted-reply" id="quoted-reply" style="display:none;">
-            <div>On Mon, 20 April 2026, <strong>Jane Doe</strong> wrote:</div>
-            <div style="margin-top:6px;">Hey, I was reading through the updated pastoral care plan and it got me thinking about what we really want students to take away from their time at NCC. What's sitting with you at the moment?</div>
+            <div>On Tue, 21 April 2026, <strong>Loida</strong> wrote:</div>
+            <div style="margin-top:6px;">Good morning, Geoff and Harrison</div>
+            <div style="margin-top:6px;">I just wanted to take the time to reach out and give you feedback regarding your Q and A session at this morning's breakfast gathering of potential NCC families. I hope that is ok.</div>
+            <div style="margin-top:6px;">Harrison, your questions were thoughtful and gave Geoff an opportunity to provide listeners with an insight into NCC's culture, community, and college values. It was good to ask Geoff a little about his personal journey &ndash; bold move, but a worthwhile question &ndash; giving listeners an insight into the principal's longevity and his connection to the college.</div>
+            <div style="margin-top:6px;">Geoff, your interaction with Harrison was warm and personable allowing listeners to relate to both of you in different ways while observing the mutual respect each of you had for each other despite your obvious difference in status. This reinforced our ethos of &ldquo;Valuing what matters most&rdquo; &ndash; our community, passion for ongoing learning regardless of pathway or stage of life, character formation, spiritual mentorship, connection, relationship, and mutual respect. I could go on&hellip;</div>
+            <div style="margin-top:6px;">The multi-faceted message communicated to our potential parents, in a relaxed interaction between former student-college captain now college employee with the Executive Principal, receives a &ldquo;thumbs up&rdquo; from me.</div>
+            <div style="margin-top:6px;">Thank you both.<br>Loida</div>
           </div>
         </div>
       </div>
@@ -563,15 +568,15 @@
       const greeting = document.getElementById("mock-greeting");
 
       if (currentMode === "reply") {
-        subj.textContent = "RE: Thinking about what matters most";
+        subj.textContent = "RE: Feedback — this morning's Q&A session";
         quoted.style.display = "block";
-        greeting.textContent = "Hi Jane,";
-        sample.textContent = "Totally with you on this — I've been sitting with similar questions since the Sow to Harvest assembly. There's something about watching the kids sing together that reframes it for me every time. Happy to grab a coffee and talk it through if you're free later in the week.";
+        greeting.textContent = "Hey Loida!";
+        sample.textContent = "All credit to Nicole for the idea - she scripted out my questions to ask Geoff for me! For what it's worth though, I totally agree. It made the whole tour very personable and made Geoff's points very understandable and clear thanks to the conversational setting!";
       } else {
         subj.textContent = "Thinking about what matters most";
         quoted.style.display = "none";
         greeting.textContent = "Hi team,";
-        sample.textContent = "At NCC, we talk a lot about valuing what matters most. But lately I've been wondering what that actually looks like from the kids' perspective — in the classroom, on the playground, at the end of a long week. Keen to hear what you're noticing with your students. Maybe grab a coffee this week?";
+        sample.textContent = "At NCC, we talk a lot about valuing what matters most. But lately I've been wondering what that actually looks like from the students' perspective - in the classroom, on the playground, at the end of a boring assembly. Keen to hear what you're noticing with your students.";
       }
     }
 
