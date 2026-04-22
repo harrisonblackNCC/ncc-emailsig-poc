@@ -97,8 +97,7 @@ function wireEvents() {
     });
   });
 
-  document.getElementById("btn-save").addEventListener("click", savePreferences);
-  document.getElementById("btn-insert").addEventListener("click", insertSignature);
+  document.getElementById("btn-action").addEventListener("click", saveAndInsert);
 }
 
 /* ── Resolve a sign-off from the UI ─────────────────────────────────── */
@@ -112,36 +111,45 @@ function resolveSignoff(prefix, fallback) {
 
 /* ── Save preferences to RoamingSettings ────────────────────────────── */
 function savePreferences() {
-  const btn      = document.getElementById("btn-save");
-  const status   = document.getElementById("save-status");
-  const settings = Office.context.roamingSettings;
+  return new Promise((resolve) => {
+    const settings = Office.context.roamingSettings;
 
-  const title        = document.getElementById("title-select").value;
-  const newSignoff   = resolveSignoff("newSignoff",   "Kind regards");
-  const replySignoff = resolveSignoff("replySignoff", "Thanks");
-  const ext          = document.getElementById("ext-input").value.trim();
-  const phone        = document.getElementById("phone-input").value.trim();
+    const title        = document.getElementById("title-select").value;
+    const newSignoff   = resolveSignoff("newSignoff",   "Kind regards");
+    const replySignoff = resolveSignoff("replySignoff", "Thanks");
+    const ext          = document.getElementById("ext-input").value.trim();
+    const phone        = document.getElementById("phone-input").value.trim();
 
-  settings.set("title",        title);
-  settings.set("newSignoff",   newSignoff);
-  settings.set("replySignoff", replySignoff);
-  settings.set("ext",          ext);
-  settings.set("phone",        phone);
+    settings.set("title",        title);
+    settings.set("newSignoff",   newSignoff);
+    settings.set("replySignoff", replySignoff);
+    settings.set("ext",          ext);
+    settings.set("phone",        phone);
+
+    settings.saveAsync((result) => {
+      resolve(result.status === Office.AsyncResultStatus.Succeeded);
+    });
+  });
+}
+
+/* ── Save preferences AND insert signature (single action) ──────────── */
+async function saveAndInsert() {
+  const btn    = document.getElementById("btn-action");
+  const status = document.getElementById("action-status");
 
   btn.disabled = true;
   status.textContent = "";
+  status.className   = "status";
 
-  settings.saveAsync((result) => {
+  const saved = await savePreferences();
+  if (!saved) {
     btn.disabled = false;
-    if (result.status === Office.AsyncResultStatus.Succeeded) {
-      status.textContent = "\u2713 Saved";
-      status.className   = "status";
-      setTimeout(() => { status.textContent = ""; }, 2500);
-    } else {
-      status.textContent = "Save failed — try again";
-      status.className   = "status error";
-    }
-  });
+    status.textContent = "Save failed — try again";
+    status.className   = "status error";
+    return;
+  }
+
+  insertSignature(() => { btn.disabled = false; });
 }
 
 /* ── Detect reply vs new message ────────────────────────────────────── */
@@ -218,18 +226,20 @@ function buildSignature() {
 }
 
 /* ── Insert signature into compose body ─────────────────────────────── */
-function insertSignature() {
-  const status = document.getElementById("insert-status");
+function insertSignature(done) {
+  const status = document.getElementById("action-status");
   const sig    = buildSignature();
+  const finish = () => { if (typeof done === "function") done(); };
 
   Office.context.mailbox.item.body.setSignatureAsync(
     sig,
     { coercionType: Office.CoercionType.Html },
     (result) => {
       if (result.status === Office.AsyncResultStatus.Succeeded) {
-        status.textContent = "\u2713 Signature inserted";
+        status.textContent = "\u2713 Saved & inserted";
         status.className   = "status";
         setTimeout(() => { status.textContent = ""; }, 2500);
+        finish();
       } else {
         // Fallback: prepend to body if setSignatureAsync not available
         Office.context.mailbox.item.body.prependAsync(
@@ -237,12 +247,13 @@ function insertSignature() {
           { coercionType: Office.CoercionType.Html },
           (r2) => {
             if (r2.status === Office.AsyncResultStatus.Succeeded) {
-              status.textContent = "\u2713 Signature inserted";
+              status.textContent = "\u2713 Saved & inserted";
               status.className   = "status";
             } else {
               status.textContent = "Insert failed — try again";
               status.className   = "status error";
             }
+            finish();
           }
         );
       }

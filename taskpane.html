@@ -28,7 +28,13 @@
       flex-shrink: 0;
       display: block;
     }
-    .tp-header-text { flex: 1; }
+    .tp-header-text {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      height: 46px;
+    }
 
     .tp-title {
       color: #ffffff;
@@ -59,38 +65,52 @@
       margin-bottom: 10px;
     }
 
+    .sub-heading {
+      font-size: 10.5px;
+      font-weight: bold;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 16px;
+      margin-bottom: 6px;
+    }
+    .section-label + .sub-heading { margin-top: 2px; }
+    .sub-heading + label.field-label { margin-top: 0; }
+
     .locked-field {
       background: #f7f7f7;
       border: 1px solid #e8e8e8;
       border-radius: 4px;
       padding: 8px 10px;
-      margin-bottom: 8px;
       font-size: 12px;
       color: #555;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
     }
-
-    .locked-field .label {
-      font-size: 10px;
-      color: #999;
-      display: block;
-      margin-bottom: 2px;
+    .locked-field .value {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .locked-badge {
-      float: right;
       font-size: 9px;
       background: #e8e8e8;
       color: #888;
       padding: 1px 5px;
       border-radius: 3px;
-      margin-top: 1px;
+      flex-shrink: 0;
     }
 
     .it-disclaimer {
       font-size: 10.5px;
       color: #888;
       line-height: 1.4;
-      margin-top: 4px;
+      margin-top: 14px;
       padding: 8px 10px;
       background: #fbfaf5;
       border-left: 2px solid #e6d89a;
@@ -102,8 +122,8 @@
       display: block;
       font-size: 11px;
       color: #666;
-      margin-bottom: 4px;
-      margin-top: 10px;
+      margin-bottom: 5px;
+      margin-top: 14px;
     }
     label.field-label:first-of-type { margin-top: 0; }
 
@@ -115,7 +135,7 @@
 
     select, input[type="text"] {
       width: 100%;
-      padding: 7px 9px;
+      padding: 8px 10px;
       border: 1px solid #ddd;
       border-radius: 4px;
       font-family: inherit;
@@ -131,42 +151,24 @@
 
     .custom-input-wrap { margin-top: 6px; }
 
-    .btn-save {
+    .btn-action {
       display: block;
       width: 100%;
-      padding: 9px;
-      background: #005953;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      font-family: inherit;
-      font-size: 12px;
-      font-weight: bold;
-      cursor: pointer;
-      letter-spacing: 0.3px;
-      transition: background 0.15s;
-      margin-top: 14px;
-    }
-    .btn-save:hover { background: #004540; }
-    .btn-save:disabled { background: #ccc; cursor: default; }
-
-    .btn-insert {
-      display: block;
-      width: 100%;
-      padding: 9px;
+      padding: 10px;
       background: #ec3426;
       color: #fff;
       border: none;
       border-radius: 4px;
       font-family: inherit;
-      font-size: 12px;
+      font-size: 12.5px;
       font-weight: bold;
       cursor: pointer;
       letter-spacing: 0.3px;
       transition: background 0.15s;
-      margin-top: 8px;
+      margin-top: 18px;
     }
-    .btn-insert:hover { background: #c62b1f; }
+    .btn-action:hover { background: #c62b1f; }
+    .btn-action:disabled { background: #ccc; cursor: default; }
 
     .status {
       font-size: 11px;
@@ -215,47 +217,40 @@
 
   <div id="main" style="display:none;">
 
-    <!-- Locked fields -->
+    <!-- Profile -->
     <div class="section">
-      <div class="section-label">Your Details</div>
-
-      <div class="locked-field">
-        <span class="label">Name <span class="locked-badge">auto</span></span>
-        <strong id="display-name">—</strong>
-      </div>
-
-      <div class="locked-field">
-        <span class="label">Role <span class="locked-badge">auto</span></span>
-        <span id="job-title">—</span>
-      </div>
-
-      <div class="locked-field">
-        <span class="label">Email <span class="locked-badge">auto</span></span>
-        <span id="email">—</span>
-      </div>
-
-      <div class="it-disclaimer">
-        <strong>Need to change these?</strong> Name, role and email come from your M365 profile. Contact IT to update them.
-      </div>
-    </div>
-
-    <!-- Customisable fields -->
-    <div class="section">
-      <div class="section-label">Customise</div>
+      <div class="section-label">Profile</div>
 
       <label class="field-label" for="title-select">Title</label>
       <select id="title-select">
-        <option value="">— none —</option>
+        <option value="">None</option>
         <option value="Mr">Mr</option>
         <option value="Mrs">Mrs</option>
         <option value="Ms">Ms</option>
         <option value="Miss">Miss</option>
         <option value="Dr">Dr</option>
         <option value="Rev">Rev</option>
-        <option value="Pastor">Pastor</option>
       </select>
 
-      <label class="field-label" for="newSignoff-select">Sign-off — new messages</label>
+      <label class="field-label">Name</label>
+      <div class="locked-field">
+        <span class="value" id="display-name">—</span>
+        <span class="locked-badge">auto</span>
+      </div>
+
+      <label class="field-label">Role</label>
+      <div class="locked-field">
+        <span class="value" id="job-title">—</span>
+        <span class="locked-badge">auto</span>
+      </div>
+    </div>
+
+    <!-- Personalise -->
+    <div class="section">
+      <div class="section-label">Personalise Your Signature</div>
+
+      <div class="sub-heading">Sign-offs</div>
+      <label class="field-label" for="newSignoff-select">For new emails</label>
       <select id="newSignoff-select">
         <option value="Kind regards">Kind regards</option>
         <option value="Warm regards">Warm regards</option>
@@ -268,7 +263,7 @@
         <input type="text" id="newSignoff-custom" placeholder="e.g. Grace and peace" maxlength="50" />
       </div>
 
-      <label class="field-label" for="replySignoff-select">Sign-off — replies</label>
+      <label class="field-label" for="replySignoff-select">For replies</label>
       <select id="replySignoff-select">
         <option value="Kind regards">Kind regards</option>
         <option value="Warm regards">Warm regards</option>
@@ -280,22 +275,30 @@
       <div class="custom-input-wrap" id="replyCustom-wrap" style="display:none;">
         <input type="text" id="replySignoff-custom" placeholder="e.g. Cheers" maxlength="50" />
       </div>
-
-      <label class="field-label" for="ext-input">Extension (optional)</label>
-      <input type="text" id="ext-input" placeholder="e.g. 1234" maxlength="10" />
-
-      <label class="field-label" for="phone-input">Direct phone (optional)</label>
-      <input type="text" id="phone-input" placeholder="e.g. (07) 5451 3300" maxlength="30" />
-
-      <button class="btn-save" id="btn-save">Save preferences</button>
-      <div class="status" id="save-status"></div>
     </div>
 
-    <!-- Insert -->
+    <!-- Contact Details -->
     <div class="section">
-      <div class="section-label">Signature</div>
-      <button class="btn-insert" id="btn-insert">Insert into email</button>
-      <div class="status" id="insert-status"></div>
+      <div class="section-label">Contact Details</div>
+
+      <label class="field-label">Email</label>
+      <div class="locked-field">
+        <span class="value" id="email">—</span>
+        <span class="locked-badge">auto</span>
+      </div>
+
+      <label class="field-label" for="ext-input">Extension (optional)</label>
+      <input type="text" id="ext-input" placeholder="e.g. 12345" maxlength="10" />
+
+      <label class="field-label" for="phone-input">Direct line (optional)</label>
+      <input type="text" id="phone-input" placeholder="e.g. (07) 5451 3333" maxlength="30" />
+
+      <div class="it-disclaimer">
+        <strong>Can't seem to edit something?</strong> Name, role and email come from your M365 profile. Contact IT to update them.
+      </div>
+
+      <button class="btn-action" id="btn-action">Save &amp; insert signature</button>
+      <div class="status" id="action-status"></div>
     </div>
 
   </div>
