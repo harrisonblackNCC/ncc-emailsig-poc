@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>NCC Email Signature — Preview</title>
+  <link rel="icon" type="image/png" href="logo.png" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -442,16 +443,16 @@
 
       <div class="email-mock">
         <div class="email-header">
-          <div class="row"><span class="lbl">To:</span><span id="mock-to">team@ncc.qld.edu.au</span></div>
-          <div class="row"><span class="lbl">Subject:</span><span id="mock-subject">Sample email</span></div>
+          <div class="row"><span class="lbl">To:</span><span id="mock-to">example@ncc.qld.edu.au</span></div>
+          <div class="row"><span class="lbl">Subject:</span><span id="mock-subject">Thinking about what matters most</span></div>
         </div>
         <div class="email-body">
           <p class="greeting" id="mock-greeting">Hi team,</p>
-          <p class="sample-text" id="mock-sample">Just sending this through to confirm the updated plan for next week. Let me know if there are any questions or anything else you need from me.</p>
+          <p class="sample-text" id="mock-sample">At NCC, we talk a lot about valuing what matters most. But lately I've been wondering what that actually looks like from the kids' perspective — in the classroom, on the playground, at the end of a long week. Keen to hear what you're noticing with your students. Maybe grab a coffee this week?</p>
           <div id="signature-container"></div>
           <div class="quoted-reply" id="quoted-reply" style="display:none;">
             <div>On Mon, 20 April 2026, <strong>Jane Doe</strong> wrote:</div>
-            <div style="margin-top:6px;">Hi Harrison, could you send through the latest draft when you get a chance?</div>
+            <div style="margin-top:6px;">Hey, I was reading through the updated pastoral care plan and it got me thinking about what we really want students to take away from their time at NCC. What's sitting with you at the moment?</div>
           </div>
         </div>
       </div>
@@ -465,6 +466,22 @@
 
   <script>
     const LOGO_URL = "https://www.ncc.qld.edu.au/wp-content/uploads/NCC-Email_600x200.jpg";
+
+    // Fixed target width, height derived from the real image's aspect ratio
+    const LOGO_TARGET_WIDTH = 430;
+    let logoAspect = 600 / 200; // default matches the current NCC-Email_600x200 asset
+
+    (function detectLogoAspect() {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        if (img.naturalWidth && img.naturalHeight) {
+          logoAspect = img.naturalWidth / img.naturalHeight;
+          if (typeof render === "function") render();
+        }
+      };
+      img.src = LOGO_URL;
+    })();
 
     const userProfile = {
       displayName: "Harrison Black",
@@ -527,7 +544,7 @@
   <a href="https://www.ncc.qld.edu.au" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">www.ncc.qld.edu.au</span></strong></a>
 </p>
 <p style="margin:0pt;line-height:normal;font-size:11pt;background-color:#ffffff;">
-  <img src="${LOGO_URL}" width="430" height="143" alt="Nambour Christian College" style="display:block;border:0;">
+  <img src="${LOGO_URL}" width="${LOGO_TARGET_WIDTH}" height="${Math.round(LOGO_TARGET_WIDTH / logoAspect)}" alt="Nambour Christian College" style="display:block;border:0;">
 </p>
 <p style="margin:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">CRICOS:</span></strong>
@@ -546,15 +563,15 @@
       const greeting = document.getElementById("mock-greeting");
 
       if (currentMode === "reply") {
-        subj.textContent = "RE: Sample email";
+        subj.textContent = "RE: Thinking about what matters most";
         quoted.style.display = "block";
         greeting.textContent = "Hi Jane,";
-        sample.textContent = "Thanks for the reminder — attaching the latest draft now.";
+        sample.textContent = "Totally with you on this — I've been sitting with similar questions since the Sow to Harvest assembly. There's something about watching the kids sing together that reframes it for me every time. Happy to grab a coffee and talk it through if you're free later in the week.";
       } else {
-        subj.textContent = "Sample email";
+        subj.textContent = "Thinking about what matters most";
         quoted.style.display = "none";
         greeting.textContent = "Hi team,";
-        sample.textContent = "Just sending this through to confirm the updated plan for next week. Let me know if there are any questions or anything else you need from me.";
+        sample.textContent = "At NCC, we talk a lot about valuing what matters most. But lately I've been wondering what that actually looks like from the kids' perspective — in the classroom, on the playground, at the end of a long week. Keen to hear what you're noticing with your students. Maybe grab a coffee this week?";
       }
     }
 

@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NCC Email Signature Add-in</title>
+  <title>NCC Email Signature Client</title>
+  <link rel="icon" type="image/png" href="logo.png" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-      background: linear-gradient(135deg, #005953 0%, #003d38 100%);
+      background: #003d38 url("illustration.png") center center / cover no-repeat fixed;
       color: #333;
       min-height: 100vh;
       display: flex;
@@ -46,13 +47,14 @@
       display: inline-block;
       background: #ec3426;
       color: #fff;
-      padding: 2px 8px;
-      border-radius: 3px;
-      font-size: 10px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
       font-weight: bold;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.6px;
       margin-left: 10px;
       vertical-align: middle;
+      text-transform: uppercase;
     }
 
     .description {
@@ -128,7 +130,7 @@
   <div class="card">
     <div class="header">
       <div class="header-text">
-        <h1>NCC Email Signature <span class="badge">POC</span></h1>
+        <h1>NCC Email Signature Client <span class="badge">Proof of Concept</span></h1>
         <div class="subtitle">Outlook Add-in &mdash; Nambour Christian College</div>
       </div>
     </div>
@@ -150,6 +152,14 @@
         <div>
           <div class="label">App-only Preview</div>
           <div class="meta">Just the taskpane at realistic Outlook sidebar dimensions</div>
+        </div>
+        <span class="arrow">&rarr;</span>
+      </a>
+
+      <a class="link" href="admin.html">
+        <div>
+          <div class="label">Admin Editor</div>
+          <div class="meta">Marketing/IT tool for editing the signature template and logo</div>
         </div>
         <span class="arrow">&rarr;</span>
       </a>

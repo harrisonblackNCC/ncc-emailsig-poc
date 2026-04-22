@@ -2,8 +2,24 @@
 
 const CLIENT_ID = "55e5528d-7efd-4bd5-a437-0d31c68d3542";
 const LOGO_URL  = "https://www.ncc.qld.edu.au/wp-content/uploads/NCC-Email_600x200.jpg";
+const LOGO_TARGET_WIDTH = 430;
 
 let userProfile = { displayName: "", jobTitle: "", mail: "" };
+let logoAspect  = 600 / 200; // sensible default until the real image loads
+
+/* ── Detect the logo's natural aspect ratio so the signature adapts ── */
+(function detectLogoAspect() {
+  try {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      if (img.naturalWidth && img.naturalHeight) {
+        logoAspect = img.naturalWidth / img.naturalHeight;
+      }
+    };
+    img.src = LOGO_URL;
+  } catch (e) { /* ignore - fall back to default aspect */ }
+})();
 
 /* ── Office initialisation ─────────────────────────────────────────── */
 Office.onReady(async () => {
@@ -216,7 +232,7 @@ function buildSignature() {
   <a href="https://www.ncc.qld.edu.au" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">www.ncc.qld.edu.au</span></strong></a>
 </p>
 <p style="margin:0pt;line-height:normal;font-size:11pt;background-color:#ffffff;">
-  <img src="${LOGO_URL}" width="430" height="143" alt="Nambour Christian College" style="display:block;border:0;">
+  <img src="${LOGO_URL}" width="${LOGO_TARGET_WIDTH}" height="${Math.round(LOGO_TARGET_WIDTH / logoAspect)}" alt="Nambour Christian College" style="display:block;border:0;">
 </p>
 <p style="margin:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">CRICOS:</span></strong>

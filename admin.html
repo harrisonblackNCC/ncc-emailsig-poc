@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NCC Email Signature — Admin</title>
+  <link rel="icon" type="image/png" href="logo.png" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: #f4f4f4;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-bar {
+      background: #005953;
+      color: #fff;
+      padding: 14px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .top-bar .brand { font-weight: bold; letter-spacing: 0.3px; }
+    .top-bar .brand small {
+      font-weight: normal;
+      opacity: 0.75;
+      margin-left: 10px;
+      font-size: 11px;
+    }
+    .top-bar .badge {
+      background: #ec3426;
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+
+    .layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── LEFT: admin form ───────────────────────── */
+    .admin-form {
+      width: 440px;
+      min-width: 440px;
+      background: #fff;
+      border-right: 1px solid #e0e0e0;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+
+    .section {
+      padding: 18px 22px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .section-label {
+      font-size: 10.5px;
+      font-weight: bold;
+      color: #005953;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 12px;
+    }
+
+    label.field-label {
+      display: block;
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 5px;
+      margin-top: 14px;
+    }
+    label.field-label:first-of-type { margin-top: 0; }
+
+    .hint {
+      font-size: 10.5px;
+      color: #999;
+      margin-top: 4px;
+      margin-bottom: -2px;
+      line-height: 1.4;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 12px;
+      color: #333;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    textarea { resize: vertical; font-family: inherit; line-height: 1.5; }
+    input[type="text"]:focus, textarea:focus { border-color: #005953; }
+
+    /* Upload zone */
+    .upload-zone {
+      border: 2px dashed #d0d0d0;
+      border-radius: 6px;
+      padding: 18px;
+      text-align: center;
+      cursor: pointer;
+      background: #fafafa;
+      transition: all 0.15s;
+      position: relative;
+    }
+    .upload-zone:hover,
+    .upload-zone.drag-over {
+      border-color: #005953;
+      background: #f1f7f5;
+    }
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .upload-zone .upload-hint {
+      color: #888;
+      font-size: 12px;
+    }
+    .upload-zone .upload-hint strong { color: #005953; }
+    .upload-preview {
+      margin-top: 10px;
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      padding: 8px;
+      display: none;
+    }
+    .upload-preview img {
+      max-width: 100%;
+      max-height: 80px;
+      display: block;
+      margin: 0 auto;
+    }
+    .upload-preview .file-name {
+      font-size: 10.5px;
+      color: #666;
+      text-align: center;
+      margin-top: 6px;
+      word-break: break-all;
+    }
+
+    /* Action buttons */
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      flex: 1;
+      min-width: 0;
+      padding: 9px 10px;
+      border: none;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 11.5px;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 0.2px;
+      transition: background 0.15s;
+      color: #fff;
+      white-space: nowrap;
+    }
+    .btn-copy { background: #005953; }
+    .btn-copy:hover { background: #004540; }
+    .btn-download { background: #007066; }
+    .btn-download:hover { background: #005953; }
+    .btn-download-img { background: #ec3426; }
+    .btn-download-img:hover { background: #c62b1f; }
+    .btn:disabled { background: #bbb; cursor: default; }
+
+    .instructions {
+      margin-top: 14px;
+      padding: 10px 12px;
+      background: #fbfaf5;
+      border-left: 3px solid #e6d89a;
+      border-radius: 0 4px 4px 0;
+      font-size: 11px;
+      color: #665;
+      line-height: 1.5;
+    }
+    .instructions code {
+      background: #efece1;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 10.5px;
+    }
+    .instructions strong { color: #6b5a1f; }
+
+    .status {
+      font-size: 11px;
+      color: #005953;
+      margin-top: 8px;
+      min-height: 16px;
+      text-align: center;
+    }
+    .status.error { color: #ec3426; }
+
+    /* ── RIGHT: live preview ─────────────────────── */
+    .preview-pane {
+      flex: 1;
+      padding: 28px 36px;
+      overflow-y: auto;
+      background: #f4f4f4;
+    }
+
+    .preview-pane h1 {
+      font-size: 18px;
+      color: #005953;
+      margin-bottom: 4px;
+    }
+    .preview-pane .subtitle {
+      color: #777;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    .mode-toggle {
+      display: inline-flex;
+      background: #fff;
+      border: 1px solid #d8d8d8;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+    .mode-toggle button {
+      background: transparent;
+      border: none;
+      padding: 7px 16px;
+      font-size: 12px;
+      color: #666;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .mode-toggle button.active {
+      background: #005953;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .email-mock {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      max-width: 780px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+      overflow: hidden;
+    }
+    .email-header {
+      padding: 14px 20px;
+      background: #fafafa;
+      border-bottom: 1px solid #eee;
+      font-size: 12px;
+      color: #666;
+    }
+    .email-header .row { display: flex; padding: 3px 0; }
+    .email-header .row .lbl { width: 60px; color: #999; }
+
+    .email-body {
+      padding: 22px 26px 26px;
+      min-height: 240px;
+      font-family: Aptos, "Segoe UI", sans-serif;
+      font-size: 11pt;
+      color: #222;
+    }
+    .email-body .greeting { color: #333; margin-bottom: 14px; }
+    .email-body .sample-text { color: #555; margin-bottom: 20px; line-height: 1.5; }
+    .email-body .quoted-reply {
+      border-left: 2px solid #ccc;
+      padding: 6px 0 6px 12px;
+      margin-top: 24px;
+      color: #888;
+      font-size: 10pt;
+      line-height: 1.5;
+    }
+
+    .note {
+      background: #fff9e6;
+      border-left: 3px solid #f0c14b;
+      padding: 10px 14px;
+      margin-top: 22px;
+      font-size: 12px;
+      color: #665;
+      max-width: 780px;
+      border-radius: 0 4px 4px 0;
+      line-height: 1.5;
+    }
+    .note strong { color: #885; }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div class="brand">
+      NCC Email Signature
+      <small>Admin — Template Editor</small>
+    </div>
+    <div class="badge">ADMIN</div>
+  </div>
+
+  <div class="layout">
+
+    <!-- LEFT: admin form -->
+    <aside class="admin-form">
+
+      <div class="section">
+        <div class="section-label">College Branding</div>
+
+        <label class="field-label" for="cfg-college-name">College name</label>
+        <input type="text" id="cfg-college-name" value="Nambour Christian College" />
+
+        <label class="field-label">Logo image (footer)</label>
+        <div class="upload-zone" id="upload-zone">
+          <input type="file" id="cfg-logo-file" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" />
+          <div class="upload-hint">
+            <strong>Drop a file here</strong> or click to select<br/>
+            <span style="font-size: 10.5px; color: #aaa;">PNG, JPG, GIF or WebP — recommended 600&times;200px</span>
+          </div>
+        </div>
+        <div class="upload-preview" id="upload-preview">
+          <img id="upload-preview-img" src="" alt="Uploaded logo" />
+          <div class="file-name" id="upload-file-name"></div>
+        </div>
+
+        <label class="field-label" for="cfg-logo-url">Live logo URL (WordPress)</label>
+        <input type="text" id="cfg-logo-url" value="https://www.ncc.qld.edu.au/wp-content/uploads/NCC-Email_600x200.jpg" />
+        <div class="hint">The URL every staff member's signature actually points at. Upload your new image to this path in WordPress to go live.</div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Contact Details</div>
+
+        <label class="field-label" for="cfg-address">Street address</label>
+        <input type="text" id="cfg-address" value="2 McKenzie Road, Woombye QLD 4559" />
+
+        <label class="field-label" for="cfg-pobox">PO Box</label>
+        <input type="text" id="cfg-pobox" value="PO Box 500, Nambour QLD 4560" />
+
+        <label class="field-label" for="cfg-main-phone">Main phone</label>
+        <input type="text" id="cfg-main-phone" value="(07) 5451 3333" />
+
+        <label class="field-label" for="cfg-info-email">Info email</label>
+        <input type="text" id="cfg-info-email" value="info@ncc.qld.edu.au" />
+
+        <label class="field-label" for="cfg-website">Website</label>
+        <input type="text" id="cfg-website" value="www.ncc.qld.edu.au" />
+
+        <label class="field-label" for="cfg-cricos">CRICOS code</label>
+        <input type="text" id="cfg-cricos" value="01461G" />
+      </div>
+
+      <div class="section">
+        <div class="section-label">Sign-off Options</div>
+        <div class="hint">One per line. Staff pick from these in their taskpane. "Custom..." is automatic — don't add it here.</div>
+        <label class="field-label" for="cfg-signoffs" style="margin-top: 10px;">Available sign-offs</label>
+        <textarea id="cfg-signoffs" rows="6">Kind regards
+Warm regards
+Blessings
+Thanks
+Many thanks</textarea>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Title Options</div>
+        <div class="hint">One per line. "None" is automatic — don't add it here.</div>
+        <label class="field-label" for="cfg-titles" style="margin-top: 10px;">Available titles</label>
+        <textarea id="cfg-titles" rows="6">Mr
+Mrs
+Ms
+Miss
+Dr
+Rev</textarea>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Inline Labels</div>
+        <div class="hint">Little tags that appear next to each contact field in the signature.</div>
+
+        <label class="field-label" for="cfg-label-email">Email label</label>
+        <input type="text" id="cfg-label-email" value="E:" maxlength="10" />
+
+        <label class="field-label" for="cfg-label-ext">Extension label</label>
+        <input type="text" id="cfg-label-ext" value="| Ext:" maxlength="10" />
+
+        <label class="field-label" for="cfg-label-phone">Direct phone label</label>
+        <input type="text" id="cfg-label-phone" value="| P:" maxlength="10" />
+
+        <label class="field-label" for="cfg-label-cricos">CRICOS label</label>
+        <input type="text" id="cfg-label-cricos" value="CRICOS:" maxlength="20" />
+      </div>
+
+      <div class="section">
+        <div class="section-label">Save Changes</div>
+        <div class="btn-row">
+          <button class="btn btn-copy" id="btn-copy">Copy config JSON</button>
+          <button class="btn btn-download" id="btn-download">Download JSON</button>
+        </div>
+        <div class="btn-row" style="margin-top: 8px;">
+          <button class="btn btn-download-img" id="btn-download-img" disabled>Download uploaded image</button>
+        </div>
+        <div class="status" id="action-status"></div>
+        <div class="instructions">
+          <strong>How to ship these changes:</strong><br/>
+          <span style="color:#6b5a1f;">1.</span> Upload your new image to WordPress at the Live logo URL above (use the <em>Enable Media Replace</em> plugin so the URL stays the same).<br/>
+          <span style="color:#6b5a1f;">2.</span> Paste the copied config JSON into <code>taskpane.js</code> — or into your SharePoint config list once that's built.<br/>
+          <span style="color:#6b5a1f;">3.</span> Re-publish the add-in. Staff pick up the new signature on next Outlook session.
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- RIGHT: live preview -->
+    <main class="preview-pane">
+      <h1>Live Preview</h1>
+      <p class="subtitle">Signature below updates as you edit. Staff name, role and email are pulled from M365 in production — faked here for the demo.</p>
+
+      <div class="mode-toggle">
+        <button id="mode-new" class="active" data-mode="new">New message</button>
+        <button id="mode-reply" data-mode="reply">Reply</button>
+      </div>
+
+      <div class="email-mock">
+        <div class="email-header">
+          <div class="row"><span class="lbl">To:</span><span>example@ncc.qld.edu.au</span></div>
+          <div class="row"><span class="lbl">Subject:</span><span id="mock-subject">Thinking about what matters most</span></div>
+        </div>
+        <div class="email-body">
+          <p class="greeting" id="mock-greeting">Hi team,</p>
+          <p class="sample-text" id="mock-sample">At NCC, we talk a lot about valuing what matters most. But lately I've been wondering what that actually looks like from the kids' perspective — in the classroom, on the playground, at the end of a long week. Keen to hear what you're noticing with your students.</p>
+          <div id="signature-container"></div>
+          <div class="quoted-reply" id="quoted-reply" style="display:none;">
+            <div>On Mon, 20 April 2026, <strong>Jane Doe</strong> wrote:</div>
+            <div style="margin-top:6px;">Hey, I was reading through the updated pastoral care plan and it got me thinking about what we really want students to take away from their time at NCC.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="note">
+        <strong>Heads up:</strong> Uploading a file here only updates the <em>preview</em> — it's not actually hosted anywhere. To make the new logo go live, download it with the button on the left, then upload it to WordPress at the Live logo URL. Once WP serves the new image, every staff member's signature updates on next Outlook session.
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+
+    // ── State ─────────────────────────────────────
+    const userProfile = {
+      displayName: "Harrison Black",
+      jobTitle: "Marketing & Communications Assistant",
+      mail: "harrison.black@ncc.qld.edu.au"
+    };
+
+    let uploadedImageDataUrl = null;
+    let uploadedImageBlob = null;
+    let uploadedImageName = null;
+    let currentMode = "new";
+
+    // Signature image sizing — width is fixed, height is derived from the
+    // actual logo's aspect ratio so any future image just works.
+    const LOGO_TARGET_WIDTH = 430;
+    let logoAspect = 600 / 200; // default matches the current NCC-Email_600x200 asset
+    let logoAspectToken = 0;    // to ignore stale async loads
+
+    function loadImageAspect(url) {
+      return new Promise(resolve => {
+        if (!url) return resolve(null);
+        const img = new Image();
+        // crossOrigin helps when loading from another domain; falls back silently if blocked
+        img.crossOrigin = "anonymous";
+        img.onload  = () => resolve(img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : null);
+        img.onerror = () => resolve(null);
+        img.src = url;
+      });
+    }
+
+    async function refreshLogoAspect(url) {
+      const token = ++logoAspectToken;
+      const aspect = await loadImageAspect(url);
+      if (token !== logoAspectToken) return; // a newer request is in flight
+      if (aspect && aspect > 0) {
+        logoAspect = aspect;
+        render();
+      }
+    }
+
+    // ── Helpers ───────────────────────────────────
+    function val(id) {
+      return document.getElementById(id).value.trim();
+    }
+
+    function getConfig({ forExport = false } = {}) {
+      // forExport: true -> use the WP URL (not the local data URL preview)
+      const liveLogoUrl = val("cfg-logo-url");
+      return {
+        collegeName: val("cfg-college-name"),
+        logoUrl: forExport ? liveLogoUrl : (uploadedImageDataUrl || liveLogoUrl),
+        address: val("cfg-address"),
+        poBox: val("cfg-pobox"),
+        mainPhone: val("cfg-main-phone"),
+        infoEmail: val("cfg-info-email"),
+        website: val("cfg-website"),
+        cricos: val("cfg-cricos"),
+        signoffs: val("cfg-signoffs").split("\n").map(s => s.trim()).filter(Boolean),
+        titles: val("cfg-titles").split("\n").map(s => s.trim()).filter(Boolean),
+        labels: {
+          email:  val("cfg-label-email"),
+          ext:    val("cfg-label-ext"),
+          phone:  val("cfg-label-phone"),
+          cricos: val("cfg-label-cricos")
+        }
+      };
+    }
+
+    function buildSignature(mode) {
+      const cfg = getConfig({ forExport: false });
+      const { displayName, jobTitle, mail } = userProfile;
+      const signoff = mode === "reply"
+        ? (cfg.signoffs[Math.min(3, cfg.signoffs.length - 1)] || "Thanks")  // 4th = "Thanks" in default list
+        : (cfg.signoffs[0] || "Kind regards");
+      const fullName = displayName;
+      const sampleExt = "12345";
+      const samplePhone = "(07) 5451 3300";
+      const addressLine = [cfg.address, cfg.poBox].filter(Boolean).join(" | ");
+
+      const extLine = ` <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">${cfg.labels.ext} </span></strong><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;">${sampleExt}</span></strong>`;
+      const phoneLine = ` <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">${cfg.labels.phone} </span></strong><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;">${samplePhone}</span></strong>`;
+
+      return `
+<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;">${signoff},</span></strong>
+</p>
+<p style="margin:0pt;margin-bottom:10pt;line-height:normal;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#ec3426;">${fullName}</span></strong>
+</p>
+<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#005953;">${jobTitle}</span></strong>
+</p>
+<p style="margin:0pt;margin-top:4pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">${cfg.labels.email} </span></strong><strong><u><a href="mailto:${mail}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${mail}</a></u></strong>${extLine}${phoneLine}
+</p>
+<p style="margin:0pt;margin-top:4pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">${cfg.collegeName}</span></strong>
+</p>
+<p style="margin:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
+  <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#333333;">${addressLine}</span>
+</p>
+<p style="margin:0pt;margin-bottom:8pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
+  <a href="tel:${cfg.mainPhone.replace(/[^+\d]/g,'')}" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">${cfg.mainPhone}</span></strong></a>
+  <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#333333;"> | </span>
+  <a href="mailto:${cfg.infoEmail}" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">${cfg.infoEmail}</span></strong></a>
+  <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#333333;"> | </span>
+  <a href="https://${cfg.website.replace(/^https?:\/\//,'')}" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">${cfg.website}</span></strong></a>
+</p>
+<p style="margin:0pt;line-height:normal;font-size:11pt;background-color:#ffffff;">
+  <img src="${cfg.logoUrl}" width="${LOGO_TARGET_WIDTH}" height="${Math.round(LOGO_TARGET_WIDTH / logoAspect)}" alt="${cfg.collegeName}" style="display:block;border:0;">
+</p>
+<p style="margin:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">${cfg.labels.cricos}</span></strong>
+  <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#333333;"> ${cfg.cricos}</span>
+</p>
+`.trim();
+    }
+
+    function render() {
+      document.getElementById("signature-container").innerHTML = buildSignature(currentMode);
+
+      const subj = document.getElementById("mock-subject");
+      const quoted = document.getElementById("quoted-reply");
+      const greeting = document.getElementById("mock-greeting");
+      const sample = document.getElementById("mock-sample");
+
+      if (currentMode === "reply") {
+        subj.textContent = "RE: Thinking about what matters most";
+        quoted.style.display = "block";
+        greeting.textContent = "Hi Jane,";
+        sample.textContent = "Totally with you on this — I've been sitting with similar questions since the Sow to Harvest assembly. Happy to grab a coffee and talk it through later in the week.";
+      } else {
+        subj.textContent = "Thinking about what matters most";
+        quoted.style.display = "none";
+        greeting.textContent = "Hi team,";
+        sample.textContent = "At NCC, we talk a lot about valuing what matters most. But lately I've been wondering what that actually looks like from the kids' perspective — in the classroom, on the playground, at the end of a long week. Keen to hear what you're noticing with your students.";
+      }
+    }
+
+    // ── Wiring ────────────────────────────────────
+
+    // Any form field change -> re-render
+    document.querySelectorAll(".admin-form input[type='text'], .admin-form textarea").forEach(el => {
+      el.addEventListener("input", render);
+    });
+
+    // When the live logo URL changes, re-read its aspect ratio (debounced).
+    // This way a taller/shorter image swapped into WordPress just works.
+    let logoUrlDebounce = null;
+    document.getElementById("cfg-logo-url").addEventListener("input", e => {
+      const url = e.target.value.trim();
+      clearTimeout(logoUrlDebounce);
+      logoUrlDebounce = setTimeout(() => refreshLogoAspect(url), 400);
+    });
+
+    // Mode toggle
+    document.querySelectorAll(".mode-toggle button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".mode-toggle button").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentMode = btn.dataset.mode;
+        render();
+      });
+    });
+
+    // File upload handling (click + drag/drop)
+    const fileInput = document.getElementById("cfg-logo-file");
+    const dropZone  = document.getElementById("upload-zone");
+    const previewEl = document.getElementById("upload-preview");
+    const previewImg = document.getElementById("upload-preview-img");
+    const previewName = document.getElementById("upload-file-name");
+    const btnDownloadImg = document.getElementById("btn-download-img");
+
+    function handleFile(file) {
+      if (!file || !file.type.startsWith("image/")) return;
+      uploadedImageName = file.name;
+      uploadedImageBlob = file;
+      const reader = new FileReader();
+      reader.onload = () => {
+        uploadedImageDataUrl = reader.result;
+        previewImg.src = uploadedImageDataUrl;
+        previewName.textContent = file.name + "  (" + Math.round(file.size / 1024) + " KB)";
+        previewEl.style.display = "block";
+        btnDownloadImg.disabled = false;
+        // Use the uploaded image's actual aspect ratio in the signature preview
+        refreshLogoAspect(uploadedImageDataUrl);
+        render();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    fileInput.addEventListener("change", e => {
+      const file = e.target.files && e.target.files[0];
+      if (file) handleFile(file);
+    });
+
+    ["dragenter", "dragover"].forEach(evt => {
+      dropZone.addEventListener(evt, e => {
+        e.preventDefault();
+        dropZone.classList.add("drag-over");
+      });
+    });
+    ["dragleave", "drop"].forEach(evt => {
+      dropZone.addEventListener(evt, e => {
+        e.preventDefault();
+        dropZone.classList.remove("drag-over");
+      });
+    });
+    dropZone.addEventListener("drop", e => {
+      const file = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    });
+
+    // ── Actions ────────────────────────────────────
+
+    function showStatus(msg, isError) {
+      const s = document.getElementById("action-status");
+      s.textContent = msg;
+      s.className = "status" + (isError ? " error" : "");
+      setTimeout(() => { s.textContent = ""; }, 3000);
+    }
+
+    function exportJson() {
+      const cfg = getConfig({ forExport: true });
+      return JSON.stringify(cfg, null, 2);
+    }
+
+    document.getElementById("btn-copy").addEventListener("click", async () => {
+      const json = exportJson();
+      try {
+        await navigator.clipboard.writeText(json);
+        showStatus("\u2713 Config copied to clipboard");
+      } catch (err) {
+        // Fallback
+        const ta = document.createElement("textarea");
+        ta.value = json;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        showStatus("\u2713 Config copied to clipboard");
+      }
+    });
+
+    document.getElementById("btn-download").addEventListener("click", () => {
+      const json = exportJson();
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "signature-config.json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showStatus("\u2713 Config downloaded");
+    });
+
+    document.getElementById("btn-download-img").addEventListener("click", () => {
+      if (!uploadedImageBlob) {
+        showStatus("No image uploaded yet", true);
+        return;
+      }
+      const url = URL.createObjectURL(uploadedImageBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = uploadedImageName || "signature-logo.png";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showStatus("\u2713 Image downloaded — upload it to WP");
+    });
+
+    // First render
+    render();
+
+    // Kick off an aspect-ratio read for the default WP logo URL so the
+    // signature preview matches the real image dimensions, not the default.
+    refreshLogoAspect(document.getElementById("cfg-logo-url").value.trim());
+  </script>
+</body>
+</html>
