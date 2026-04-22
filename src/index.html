@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NCC Email Signature Client</title>
+  <link rel="icon" type="image/png" href="logo.png" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: #003d38 url("illustration.png") center center / cover no-repeat fixed;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      max-width: 560px;
+      width: 100%;
+      padding: 40px 44px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .header-text h1 {
+      font-size: 22px;
+      color: #005953;
+      margin-bottom: 2px;
+    }
+    .header-text .subtitle {
+      color: #888;
+      font-size: 13px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #ec3426;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 0.6px;
+      margin-left: 10px;
+      vertical-align: middle;
+      text-transform: uppercase;
+    }
+
+    .description {
+      color: #555;
+      line-height: 1.6;
+      font-size: 14px;
+      margin-bottom: 28px;
+    }
+
+    .links {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .link {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      text-decoration: none;
+      color: #333;
+      transition: all 0.15s;
+    }
+    .link:hover {
+      border-color: #005953;
+      background: #f7fbfa;
+      transform: translateX(2px);
+    }
+
+    .link .label {
+      font-weight: bold;
+      font-size: 14px;
+      color: #005953;
+    }
+    .link .meta {
+      font-size: 12px;
+      color: #888;
+      margin-top: 2px;
+    }
+    .link .arrow {
+      color: #ccc;
+      font-size: 20px;
+    }
+
+    .link.primary {
+      background: #005953;
+      border-color: #005953;
+    }
+    .link.primary .label { color: #fff; }
+    .link.primary .meta { color: rgba(255,255,255,0.8); }
+    .link.primary .arrow { color: rgba(255,255,255,0.6); }
+    .link.primary:hover {
+      background: #004540;
+      border-color: #004540;
+    }
+
+    .footer {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+      font-size: 11px;
+      color: #aaa;
+      text-align: center;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="header">
+      <div class="header-text">
+        <h1>NCC Email Signature Client <span class="badge">Proof of Concept</span></h1>
+        <div class="subtitle">Outlook Add-in &mdash; Nambour Christian College</div>
+      </div>
+    </div>
+
+    <p class="description">
+      Auto-inserts a branded NCC email signature into Outlook compose windows, pulling each staff member's name and role directly from their M365 profile. Staff can customise their sign-off and extension, and their preferences follow them across devices.
+    </p>
+
+    <div class="links">
+      <a class="link primary" href="preview.html">
+        <div>
+          <div class="label">Live Preview</div>
+          <div class="meta">Side-by-side: taskpane UI + live signature in a mock email</div>
+        </div>
+        <span class="arrow">&rarr;</span>
+      </a>
+
+      <a class="link" href="app-preview.html">
+        <div>
+          <div class="label">App-only Preview</div>
+          <div class="meta">Just the taskpane at realistic Outlook sidebar dimensions</div>
+        </div>
+        <span class="arrow">&rarr;</span>
+      </a>
+
+      <a class="link" href="admin.html">
+        <div>
+          <div class="label">Admin Editor</div>
+          <div class="meta">Marketing/IT tool for editing the signature template and logo</div>
+        </div>
+        <span class="arrow">&rarr;</span>
+      </a>
+
+      <a class="link" href="taskpane.html">
+        <div>
+          <div class="label">Taskpane (production)</div>
+          <div class="meta">The real add-in UI &mdash; requires Outlook to function</div>
+        </div>
+        <span class="arrow">&rarr;</span>
+      </a>
+
+      <a class="link" href="https://github.com/harrisonblackNCC/ncc-emailsig-poc">
+        <div>
+          <div class="label">Source on GitHub</div>
+          <div class="meta">View the code, manifest, and setup guide</div>
+        </div>
+        <span class="arrow">&rarr;</span>
+      </a>
+    </div>
+
+    <div class="footer">
+      Nambour Christian College &middot; Internal tool &middot; Proof of concept
+    </div>
+  </div>
+
+</body>
+</html>
