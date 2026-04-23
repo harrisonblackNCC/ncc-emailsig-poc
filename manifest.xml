@@ -3,6 +3,7 @@
   xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0"
   xsi:type="MailApp">
 
   <Id>ee5c20d5-aa7d-4462-a9a8-0a39ac4ea746</Id>
@@ -16,8 +17,6 @@
   <SupportUrl DefaultValue="https://www.ncc.qld.edu.au"/>
 
   <AppDomains>
-    <AppDomain>https://login.microsoftonline.com</AppDomain>
-    <AppDomain>https://graph.microsoft.com</AppDomain>
     <AppDomain>https://harrisonblackncc.github.io</AppDomain>
   </AppDomains>
 
@@ -27,7 +26,7 @@
 
   <Requirements>
     <Sets>
-      <Set Name="Mailbox" MinVersion="1.10"/>
+      <Set Name="Mailbox" MinVersion="1.5"/>
     </Sets>
   </Requirements>
 
@@ -46,69 +45,61 @@
     <Rule xsi:type="ItemIs" ItemType="Message" FormType="Edit"/>
   </Rule>
 
+  <DisableEntityHighlighting>false</DisableEntityHighlighting>
+
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
-    <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides/1.1" xsi:type="VersionOverridesV1_1">
+    <Requirements>
+      <bt:Sets DefaultMinVersion="1.5">
+        <bt:Set Name="Mailbox"/>
+      </bt:Sets>
+    </Requirements>
 
-      <Requirements>
-        <bt:Sets DefaultMinVersion="1.10">
-          <bt:Set Name="Mailbox"/>
-        </bt:Sets>
-      </Requirements>
+    <Hosts>
+      <Host xsi:type="MailHost">
+        <DesktopFormFactor>
+          <ExtensionPoint xsi:type="MessageComposeCommandSurface">
+            <OfficeTab id="TabDefault">
+              <Group id="ncc.signature.group">
+                <Label resid="GroupLabel"/>
+                <Control xsi:type="Button" id="ncc.signature.button">
+                  <Label resid="TaskpaneButton.Label"/>
+                  <Supertip>
+                    <Title resid="TaskpaneButton.Label"/>
+                    <Description resid="TaskpaneButton.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16"/>
+                    <bt:Image size="32" resid="Icon.32x32"/>
+                    <bt:Image size="80" resid="Icon.80x80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
 
-      <Hosts>
-        <Host xsi:type="MailHost">
-          <DesktopFormFactor>
-
-            <FunctionFile resid="Commands.Url"/>
-
-            <!-- Compose ribbon button -->
-            <ExtensionPoint xsi:type="MessageComposeCommandSurface">
-              <OfficeTab id="TabDefault">
-                <Group id="ncc.signature.group">
-                  <Label resid="GroupLabel"/>
-                  <Control xsi:type="Button" id="ncc.signature.button">
-                    <Label resid="TaskpaneButton.Label"/>
-                    <Supertip>
-                      <Title resid="TaskpaneButton.Label"/>
-                      <Description resid="TaskpaneButton.Tooltip"/>
-                    </Supertip>
-                    <Icon>
-                      <bt:Image size="16" resid="Icon.16x16"/>
-                      <bt:Image size="32" resid="Icon.32x32"/>
-                      <bt:Image size="80" resid="Icon.80x80"/>
-                    </Icon>
-                    <Action xsi:type="ShowTaskpane">
-                      <SourceLocation resid="Taskpane.Url"/>
-                    </Action>
-                  </Control>
-                </Group>
-              </OfficeTab>
-            </ExtensionPoint>
-
-          </DesktopFormFactor>
-        </Host>
-      </Hosts>
-
-      <Resources>
-        <bt:Images>
-          <bt:Image id="Icon.16x16" DefaultValue="https://harrisonblackncc.github.io/ncc-emailsig-poc/icon-16.png"/>
-          <bt:Image id="Icon.32x32" DefaultValue="https://harrisonblackncc.github.io/ncc-emailsig-poc/icon-32.png"/>
-          <bt:Image id="Icon.80x80" DefaultValue="https://harrisonblackncc.github.io/ncc-emailsig-poc/icon-80.png"/>
-        </bt:Images>
-        <bt:Urls>
-          <bt:Url id="Commands.Url"    DefaultValue="https://harrisonblackncc.github.io/ncc-emailsig-poc/commands.html"/>
-          <bt:Url id="Taskpane.Url"   DefaultValue="https://harrisonblackncc.github.io/ncc-emailsig-poc/taskpane.html"/>
-          <bt:Url id="LaunchEvent.Url" DefaultValue="https://harrisonblackncc.github.io/ncc-emailsig-poc/launchevent.js"/>
-        </bt:Urls>
-        <bt:ShortStrings>
-          <bt:String id="GroupLabel"            DefaultValue="NCC Signature"/>
-          <bt:String id="TaskpaneButton.Label"  DefaultValue="Signature"/>
-        </bt:ShortStrings>
-        <bt:LongStrings>
-          <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Insert and customise your NCC branded email signature."/>
-        </bt:LongStrings>
-      </Resources>
-
-    </VersionOverrides>
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16x16" DefaultValue="https://harrisonblackncc.github.io/ncc-emailsig-poc/icon-16.png"/>
+        <bt:Image id="Icon.32x32" DefaultValue="https://harrisonblackncc.github.io/ncc-emailsig-poc/icon-32.png"/>
+        <bt:Image id="Icon.80x80" DefaultValue="https://harrisonblackncc.github.io/ncc-emailsig-poc/icon-80.png"/>
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://harrisonblackncc.github.io/ncc-emailsig-poc/taskpane.html"/>
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="GroupLabel" DefaultValue="NCC Signature"/>
+        <bt:String id="TaskpaneButton.Label" DefaultValue="Signature"/>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Insert and customise your NCC branded email signature."/>
+      </bt:LongStrings>
+    </Resources>
   </VersionOverrides>
+
 </OfficeApp>
