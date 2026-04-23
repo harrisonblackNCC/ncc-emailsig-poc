@@ -1,11 +1,10 @@
 /* NCC Email Signature Add-in - taskpane.js */
 
-const CLIENT_ID = "55e5528d-7efd-4bd5-a437-0d31c68d3542";
 const LOGO_URL  = "https://www.ncc.qld.edu.au/wp-content/uploads/NCC-Email_600x200.jpg";
 const LOGO_TARGET_WIDTH = 430;
 
 let userProfile = { displayName: "", jobTitle: "", mail: "" };
-let logoAspect  = 600 / 200; // sensible default until the real image loads
+let logoAspect  = 600 / 200; // default until the real image loads
 
 /* ── Detect the logo's natural aspect ratio so the signature adapts ── */
 (function detectLogoAspect() {
@@ -22,52 +21,34 @@ let logoAspect  = 600 / 200; // sensible default until the real image loads
 })();
 
 /* ── Office initialisation ─────────────────────────────────────────── */
-Office.onReady(async () => {
-  await loadProfile();
+Office.onReady(() => {
+  loadProfile();
   loadPreferences();
   wireEvents();
   document.getElementById("loading").style.display = "none";
   document.getElementById("main").style.display    = "block";
 });
 
-/* ── Load user profile from Microsoft Graph ─────────────────────────── */
-async function loadProfile() {
+/* ── Load user profile from Office mailbox (no auth required) ──────── */
+function loadProfile() {
   try {
-    const token = await getAccessToken();
-    const res   = await fetch("https://graph.microsoft.com/v1.0/me?$select=displayName,jobTitle,mail", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const p = Office.context.mailbox.userProfile;
+    userProfile.displayName = p.displayName   || "";
+    userProfile.mail        = p.emailAddress  || "";
 
-    if (!res.ok) throw new Error("Graph request failed");
+    // jobTitle isn't exposed on userProfile — the staff member types it
+    // into the editable Role field and we save it to RoamingSettings.
+    const savedTitle = Office.context.roamingSettings.get("jobTitle") || "";
+    userProfile.jobTitle = savedTitle;
 
-    const data = await res.json();
-    userProfile.displayName = data.displayName || "";
-    userProfile.jobTitle    = data.jobTitle    || "";
-    userProfile.mail        = data.mail        || "";
-
-    document.getElementById("display-name").textContent = userProfile.displayName;
-    document.getElementById("job-title").textContent    = userProfile.jobTitle;
-    document.getElementById("email").textContent        = userProfile.mail;
-
+    document.getElementById("display-name").textContent = userProfile.displayName || "—";
+    document.getElementById("email").textContent        = userProfile.mail        || "—";
+    document.getElementById("job-title-input").value    = savedTitle;
   } catch (err) {
     console.error("Profile load error:", err);
-    document.getElementById("display-name").textContent = "Could not load — check sign-in";
-    document.getElementById("job-title").textContent    = "";
+    document.getElementById("display-name").textContent = "Could not load";
     document.getElementById("email").textContent        = "";
   }
-}
-
-/* ── Get access token via Office SSO ─────────────────────────────────── */
-async function getAccessToken() {
-  return new Promise((resolve, reject) => {
-    Office.auth.getAccessToken({ allowSignInPrompt: true, allowConsentPrompt: true }, (result) => {
-      if (result.status === "succeeded") {
-        resolve(result.value);
-      } else {
-        reject(new Error(result.error.message));
-      }
-    });
-  });
 }
 
 /* ── Load saved preferences from RoamingSettings ────────────────────── */
@@ -131,16 +112,20 @@ function savePreferences() {
     const settings = Office.context.roamingSettings;
 
     const title        = document.getElementById("title-select").value;
+    const jobTitle     = document.getElementById("job-title-input").value.trim();
     const newSignoff   = resolveSignoff("newSignoff",   "Kind regards");
     const replySignoff = resolveSignoff("replySignoff", "Thanks");
     const ext          = document.getElementById("ext-input").value.trim();
     const phone        = document.getElementById("phone-input").value.trim();
 
     settings.set("title",        title);
+    settings.set("jobTitle",     jobTitle);
     settings.set("newSignoff",   newSignoff);
     settings.set("replySignoff", replySignoff);
     settings.set("ext",          ext);
     settings.set("phone",        phone);
+
+    userProfile.jobTitle = jobTitle;
 
     settings.saveAsync((result) => {
       resolve(result.status === Office.AsyncResultStatus.Succeeded);
@@ -172,9 +157,7 @@ async function saveAndInsert() {
 function isReplyContext() {
   try {
     const item = Office.context.mailbox.item;
-    // conversationId is present on reply/forward compose sessions
     if (item.conversationId) return true;
-    // Subject-based fallback
     if (item.subject && typeof item.subject === "string") {
       if (/^(re|fw|fwd)\s*:/i.test(item.subject.trim())) return true;
     }
@@ -187,6 +170,7 @@ function buildSignature() {
   const settings = Office.context.roamingSettings;
 
   const title        = document.getElementById("title-select").value.trim() || settings.get("title") || "";
+  const jobTitle     = document.getElementById("job-title-input").value.trim() || settings.get("jobTitle") || "";
   const newSignoff   = resolveSignoff("newSignoff",   settings.get("newSignoff")   || "Kind regards");
   const replySignoff = resolveSignoff("replySignoff", settings.get("replySignoff") || "Thanks");
   const ext          = document.getElementById("ext-input").value.trim()   || settings.get("ext")   || "";
@@ -194,7 +178,7 @@ function buildSignature() {
 
   const signoff = isReplyContext() ? replySignoff : newSignoff;
 
-  const { displayName, jobTitle, mail } = userProfile;
+  const { displayName, mail } = userProfile;
   const fullName = title ? `${title} ${displayName}` : displayName;
 
   const extLine = ext
