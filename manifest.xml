@@ -3,7 +3,6 @@
   xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
-  xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0"
   xsi:type="MailApp">
 
   <Id>ee5c20d5-aa7d-4462-a9a8-0a39ac4ea746</Id>
@@ -35,9 +34,8 @@
   <FormSettings>
     <Form xsi:type="ItemEdit">
       <DesktopSettings>
-        <!-- REPLACE with your hosted URL after deploying -->
         <SourceLocation DefaultValue="https://harrisonblackncc.github.io/ncc-emailsig-poc/taskpane.html"/>
-        <RequestedHeight>550</RequestedHeight>
+        <RequestedHeight>450</RequestedHeight>
       </DesktopSettings>
     </Form>
   </FormSettings>
