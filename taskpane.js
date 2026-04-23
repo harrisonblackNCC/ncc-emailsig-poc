@@ -1,4 +1,4 @@
-/* NCC Email Signature Add-in - taskpane.js */
+/* NCC Email Signature Client Add-in - taskpane.js */
 
 const LOGO_URL  = "https://www.ncc.qld.edu.au/wp-content/uploads/NCC-Email_600x200.jpg";
 const LOGO_TARGET_WIDTH = 430;
