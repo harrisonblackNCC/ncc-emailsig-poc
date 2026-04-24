@@ -61,6 +61,16 @@ async function loadProfile() {
     userProfile.jobTitle    = me.jobTitle
                               || Office.context.roamingSettings.get("jobTitle")
                               || "";
+
+    // Cache the fresh Entra jobTitle so launchevent.js has it next time
+    // SSO is slow or unavailable. Best-effort, don't block render on it.
+    if (me.jobTitle) {
+      try {
+        const s = Office.context.roamingSettings;
+        s.set("jobTitle", me.jobTitle);
+        s.saveAsync(() => {});
+      } catch (e) { /* ignore */ }
+    }
   } catch (err) {
     console.warn("SSO/Graph failed, falling back to mailbox.userProfile:", err);
     mailboxFallback();
@@ -72,7 +82,7 @@ async function loadProfile() {
 function renderProfile() {
   document.getElementById("display-name").textContent = userProfile.displayName || "—";
   document.getElementById("email").textContent        = userProfile.mail        || "—";
-  document.getElementById("job-title-input").value    = userProfile.jobTitle    || "";
+  document.getElementById("job-title").textContent    = userProfile.jobTitle    || "—";
 }
 
 function withTimeout(promise, ms) {
@@ -147,20 +157,20 @@ function savePreferences() {
     const settings = Office.context.roamingSettings;
 
     const title        = document.getElementById("title-select").value;
-    const jobTitle     = document.getElementById("job-title-input").value.trim();
     const newSignoff   = resolveSignoff("newSignoff",   "Kind regards");
     const replySignoff = resolveSignoff("replySignoff", "Thanks");
     const ext          = document.getElementById("ext-input").value.trim();
     const phone        = document.getElementById("phone-input").value.trim();
 
     settings.set("title",        title);
-    settings.set("jobTitle",     jobTitle);
     settings.set("newSignoff",   newSignoff);
     settings.set("replySignoff", replySignoff);
     settings.set("ext",          ext);
     settings.set("phone",        phone);
 
-    userProfile.jobTitle = jobTitle;
+    // jobTitle is auto-pulled from Entra only — not user-editable. The
+    // cached copy in roamingSettings is maintained by launchevent.js and
+    // the loadProfile() SSO call so it stays fresh.
 
     settings.saveAsync((result) => {
       resolve(result.status === Office.AsyncResultStatus.Succeeded);
@@ -205,7 +215,7 @@ function buildSignature() {
   const settings = Office.context.roamingSettings;
 
   const title        = document.getElementById("title-select").value.trim() || settings.get("title") || "";
-  const jobTitle     = document.getElementById("job-title-input").value.trim() || settings.get("jobTitle") || userProfile.jobTitle || "";
+  const jobTitle     = userProfile.jobTitle || settings.get("jobTitle") || "";
   const newSignoff   = resolveSignoff("newSignoff",   settings.get("newSignoff")   || "Kind regards");
   const replySignoff = resolveSignoff("replySignoff", settings.get("replySignoff") || "Thanks");
   const ext          = document.getElementById("ext-input").value.trim()   || settings.get("ext")   || "";
