@@ -223,6 +223,14 @@ function buildSignature() {
     ? ` <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">| P: </span></strong><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;">${phone}</span></strong>`
     : "";
 
+  // Role paragraph is conditional — skip the line entirely if blank so we
+  // don't render an awkward empty paragraph. Kept in sync with launchevent.js.
+  const rolePara = jobTitle
+    ? `<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#005953;">${jobTitle}</span></strong>
+</p>`
+    : "";
+
   return `
 <p style="margin:0pt;line-height:normal;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;">${signoff},</span></strong>
@@ -230,9 +238,7 @@ function buildSignature() {
 <p style="margin:0pt;margin-bottom:10pt;line-height:normal;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#ec3426;">${fullName}</span></strong>
 </p>
-<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
-  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#005953;">${jobTitle}</span></strong>
-</p>
+${rolePara}
 <p style="margin:0pt;margin-top:4pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">E: </span></strong><strong><u><a href="mailto:${mail}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${mail}</a></u></strong>${extLine}${phoneLine}
 </p>
