@@ -1,17 +1,48 @@
-/* NCC Signature Add-in - launchevent.js
-   Runs automatically when a new compose window opens.
-   Auto-inserts the signature without any user action needed. */
+/* NCC Email Signature Client - launchevent.js
+ *
+ * Event-based activation: runs automatically the moment a compose window
+ * opens and drops the personalised NCC signature in — no taskpane, no
+ * click, no UI. Pulls name + email from mailbox.userProfile (no SSO
+ * needed) and title/role/signoff/ext/phone from RoamingSettings (set
+ * once via the taskpane, reused forever).
+ *
+ * The HTML signature here is kept in lockstep with buildSignature() in
+ * taskpane.js so the output is identical whether the add-in inserts
+ * automatically or the user clicks the button manually.
+ */
 
 const LOGO_URL = "https://www.ncc.qld.edu.au/wp-content/uploads/NCC-Email_600x200.jpg";
+const LOGO_WIDTH  = 430;
+const LOGO_HEIGHT = 143; // 430 / (600/200) rounded — matches the WordPress-hosted asset
 
-async function onMessageComposeOpened(event) {
+/* Register the handler so the manifest's FunctionName resolves. */
+Office.onReady(() => {
+  Office.actions.associate("onNewMessageComposeHandler", onNewMessageComposeHandler);
+});
+
+/* ── Main handler ────────────────────────────────────────────────────── */
+function onNewMessageComposeHandler(event) {
   try {
-    const token   = await getTokenSilent();
-    const profile = await fetchProfile(token);
-    const prefs   = loadPrefs();
-    const sig     = buildSig(profile, prefs);
+    const settings = Office.context.roamingSettings;
+    const profile  = Office.context.mailbox.userProfile;
+    const item     = Office.context.mailbox.item;
 
-    Office.context.mailbox.item.body.setSignatureAsync(
+    const title        = settings.get("title")        || "";
+    const jobTitle     = settings.get("jobTitle")     || "";
+    const newSignoff   = settings.get("newSignoff")   || settings.get("signoff") || "Kind regards";
+    const replySignoff = settings.get("replySignoff") || "Thanks";
+    const ext          = settings.get("ext")          || "";
+    const phone        = settings.get("phone")        || "";
+
+    const displayName = profile.displayName  || "";
+    const mail        = profile.emailAddress || "";
+
+    const signoff  = isReplyContext(item) ? replySignoff : newSignoff;
+    const fullName = title ? `${title} ${displayName}` : displayName;
+
+    const sig = buildSignature({ signoff, fullName, jobTitle, mail, ext, phone });
+
+    item.body.setSignatureAsync(
       sig,
       { coercionType: Office.CoercionType.Html },
       () => event.completed()
@@ -22,75 +53,60 @@ async function onMessageComposeOpened(event) {
   }
 }
 
-async function getTokenSilent() {
-  return new Promise((resolve, reject) => {
-    Office.auth.getAccessToken(
-      { allowSignInPrompt: false, allowConsentPrompt: false, forMSGraphAccess: true },
-      (result) => {
-        if (result.status === "succeeded") resolve(result.value);
-        else reject(new Error(result.error?.message || "Token error"));
-      }
-    );
-  });
+/* ── Reply vs new message ────────────────────────────────────────────── */
+function isReplyContext(item) {
+  try {
+    if (item.conversationId) return true;
+    if (item.subject && typeof item.subject === "string" &&
+        /^(re|fw|fwd)\s*:/i.test(item.subject.trim())) {
+      return true;
+    }
+  } catch (e) { /* default to new */ }
+  return false;
 }
 
-async function fetchProfile(token) {
-  const res = await fetch(
-    "https://graph.microsoft.com/v1.0/me?$select=displayName,jobTitle,mail",
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-  if (!res.ok) throw new Error("Graph failed");
-  return res.json();
-}
+/* ── Signature HTML (kept identical to taskpane.js buildSignature) ──── */
+function buildSignature({ signoff, fullName, jobTitle, mail, ext, phone }) {
+  const extLine = ext
+    ? ` <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">| Ext: </span></strong><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;">${ext}</span></strong>`
+    : "";
 
-function loadPrefs() {
-  const s = Office.context.roamingSettings;
-  return {
-    signoff: s.get("signoff") || "Kind regards",
-    ext:     s.get("ext")     || ""
-  };
-}
-
-function buildSig(profile, prefs) {
-  const name    = profile.displayName || "";
-  const role    = profile.jobTitle    || "";
-  const email   = profile.mail        || "";
-  const signoff = prefs.signoff;
-  const extLine = prefs.ext
-    ? `<strong><span style="font-family:Helvetica,Arial,sans-serif;color:#005953;">| Ext: </span></strong><strong><span style="font-family:Helvetica,Arial,sans-serif;color:#000000;">${prefs.ext}</span></strong>`
+  const phoneLine = phone
+    ? ` <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">| P: </span></strong><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;">${phone}</span></strong>`
     : "";
 
   return `
-<p style="margin-top:0pt;margin-bottom:0pt;line-height:normal;">
-  <strong><span style="font-family:Helvetica,Arial,sans-serif;font-size:12pt;">${signoff},</span></strong>
+<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;">${signoff},</span></strong>
 </p>
-<p style="margin-top:0pt;margin-bottom:12pt;line-height:normal;">
-  <strong><span style="font-family:Helvetica,Arial,sans-serif;font-size:12pt;color:#ec3426;">${name}</span></strong>
+<p style="margin:0pt;margin-bottom:10pt;line-height:normal;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#ec3426;">${fullName}</span></strong>
 </p>
-<p style="margin-top:0pt;margin-bottom:0pt;line-height:normal;">
-  <strong><span style="font-family:Helvetica,Arial,sans-serif;font-size:12pt;color:#005953;">${role}</span></strong>
+<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#005953;">${jobTitle}</span></strong>
 </p>
-<p style="margin-top:0pt;margin-bottom:0pt;line-height:normal;font-size:10pt;">
-  <strong><span style="font-family:Helvetica,Arial,sans-serif;color:#005953;">E: </span></strong><strong><u><a href="mailto:${email}" style="font-family:Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${email}</a></u></strong>
-  ${extLine}
+<p style="margin:0pt;margin-top:4pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">E: </span></strong><strong><u><a href="mailto:${mail}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${mail}</a></u></strong>${extLine}${phoneLine}
 </p>
-<p style="margin-top:0pt;margin-bottom:8pt;">
-  <br>
-  <strong><span style="font-family:Helvetica,Arial,sans-serif;font-size:10pt;color:#005953;">Nambour Christian College</span></strong><br>
-  <span style="font-family:Helvetica,Arial,sans-serif;font-size:8pt;color:#333333;">2 McKenzie Road, Woombye QLD 4559 | PO Box 500, Nambour QLD 4560</span><br>
-  <a href="tel:+61754513333" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Helvetica,Arial,sans-serif;font-size:8pt;color:#ec3426;">(07) 5451 3333 </span></strong></a><span style="font-family:Helvetica,Arial,sans-serif;font-size:8pt;">|</span>
-  <a href="mailto:info@ncc.qld.edu.au" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Helvetica,Arial,sans-serif;font-size:8pt;color:#ec3426;"> info@ncc.qld.edu.au</span></strong></a>
-  <span style="font-family:Helvetica,Arial,sans-serif;font-size:8pt;">|</span><a href="https://www.ncc.qld.edu.au" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Helvetica,Arial,sans-serif;font-size:8pt;color:#ec3426;"> www.ncc.qld.edu.au</span></strong></a>
+<p style="margin:0pt;margin-top:4pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">Nambour Christian College</span></strong>
 </p>
-<p style="margin-top:0pt;margin-bottom:0pt;line-height:normal;font-size:12pt;">
-  <img src="${LOGO_URL}" width="430" height="143" alt="Nambour Christian College" style="display:block;border:0;">
+<p style="margin:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
+  <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#333333;">2 McKenzie Road, Woombye QLD 4559 | PO Box 500, Nambour QLD 4560</span>
 </p>
-<p style="margin-top:0pt;margin-bottom:0pt;line-height:normal;font-size:8pt;">
-  <strong><span style="font-family:Helvetica,Arial,sans-serif;color:#005953;">CRICOS:</span></strong>
-  <span style="font-family:Helvetica,Arial,sans-serif;color:#333333;"> 01461G</span>
+<p style="margin:0pt;margin-bottom:8pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
+  <a href="tel:+61754513333" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">(07) 5451 3333</span></strong></a>
+  <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#333333;"> | </span>
+  <a href="mailto:info@ncc.qld.edu.au" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">info@ncc.qld.edu.au</span></strong></a>
+  <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#333333;"> | </span>
+  <a href="https://www.ncc.qld.edu.au" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">www.ncc.qld.edu.au</span></strong></a>
+</p>
+<p style="margin:0pt;line-height:normal;font-size:11pt;background-color:#ffffff;">
+  <img src="${LOGO_URL}" width="${LOGO_WIDTH}" height="${LOGO_HEIGHT}" alt="Nambour Christian College" style="display:block;border:0;">
+</p>
+<p style="margin:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">CRICOS:</span></strong>
+  <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#333333;"> 01461G</span>
 </p>
 `.trim();
 }
-
-// Register the handler
-Office.actions.associate("onMessageComposeOpened", onMessageComposeOpened);

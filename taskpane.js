@@ -1,12 +1,24 @@
-/* NCC Email Signature Client Add-in - taskpane.js */
+/* NCC Email Signature Client Add-in - taskpane.js (SSO-ENABLED VERSION)
+ *
+ * Swap this in for src/taskpane.js AFTER Daniel has:
+ *   1. Created the service principal for AppId 55e5528d-7efd-4bd5-a437-0d31c68d3542
+ *   2. Added the OWA client IDs to pre-authorised applications
+ *   3. You've swapped future-sso/manifest.xml into manifest/manifest.xml
+ *
+ * This version:
+ *   - Tries Office SSO first to pull name/email/jobTitle from Graph
+ *   - Falls back to Office.context.mailbox.userProfile + manual jobTitle if SSO fails
+ *     (so if SP is ever accidentally removed, the add-in still works)
+ */
 
 const LOGO_URL  = "https://www.ncc.qld.edu.au/wp-content/uploads/NCC-Email_600x200.jpg";
 const LOGO_TARGET_WIDTH = 430;
+const SSO_TIMEOUT_MS = 4000;   // give up on SSO after 4s and fall back
 
 let userProfile = { displayName: "", jobTitle: "", mail: "" };
-let logoAspect  = 600 / 200; // default until the real image loads
+let logoAspect  = 600 / 200;
 
-/* ── Detect the logo's natural aspect ratio so the signature adapts ── */
+/* ── Detect logo aspect ratio for the signature image ───────────────── */
 (function detectLogoAspect() {
   try {
     const img = new Image();
@@ -17,74 +29,98 @@ let logoAspect  = 600 / 200; // default until the real image loads
       }
     };
     img.src = LOGO_URL;
-  } catch (e) { /* ignore - fall back to default aspect */ }
+  } catch (e) { /* fall back to default */ }
 })();
 
-/* ── Office initialisation ─────────────────────────────────────────── */
-Office.onReady(() => {
-  loadProfile();
+/* ── Office init ────────────────────────────────────────────────────── */
+Office.onReady(async () => {
+  await loadProfile();
   loadPreferences();
   wireEvents();
   document.getElementById("loading").style.display = "none";
   document.getElementById("main").style.display    = "block";
 });
 
-/* ── Load user profile from Office mailbox (no auth required) ──────── */
-function loadProfile() {
-  try {
+/* ── Try SSO first, fall back to mailbox.userProfile if anything goes wrong ── */
+async function loadProfile() {
+  const mailboxFallback = () => {
     const p = Office.context.mailbox.userProfile;
-    userProfile.displayName = p.displayName   || "";
-    userProfile.mail        = p.emailAddress  || "";
+    userProfile.displayName = p.displayName  || "";
+    userProfile.mail        = p.emailAddress || "";
+    userProfile.jobTitle    = Office.context.roamingSettings.get("jobTitle") || "";
+  };
 
-    // jobTitle isn't exposed on userProfile — the staff member types it
-    // into the editable Role field and we save it to RoamingSettings.
-    const savedTitle = Office.context.roamingSettings.get("jobTitle") || "";
-    userProfile.jobTitle = savedTitle;
-
-    document.getElementById("display-name").textContent = userProfile.displayName || "—";
-    document.getElementById("email").textContent        = userProfile.mail        || "—";
-    document.getElementById("job-title-input").value    = savedTitle;
+  try {
+    const token = await withTimeout(
+      Office.auth.getAccessToken({ allowSignInPrompt: true, forMSGraphAccess: true }),
+      SSO_TIMEOUT_MS
+    );
+    const me = await fetchGraphMe(token);
+    userProfile.displayName = me.displayName || "";
+    userProfile.mail        = me.mail || me.userPrincipalName || "";
+    userProfile.jobTitle    = me.jobTitle
+                              || Office.context.roamingSettings.get("jobTitle")
+                              || "";
   } catch (err) {
-    console.error("Profile load error:", err);
-    document.getElementById("display-name").textContent = "Could not load";
-    document.getElementById("email").textContent        = "";
+    console.warn("SSO/Graph failed, falling back to mailbox.userProfile:", err);
+    mailboxFallback();
   }
+
+  renderProfile();
 }
 
-/* ── Load saved preferences from RoamingSettings ────────────────────── */
+function renderProfile() {
+  document.getElementById("display-name").textContent = userProfile.displayName || "—";
+  document.getElementById("email").textContent        = userProfile.mail        || "—";
+  document.getElementById("job-title-input").value    = userProfile.jobTitle    || "";
+}
+
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("SSO timeout")), ms))
+  ]);
+}
+
+async function fetchGraphMe(token) {
+  const res = await fetch("https://graph.microsoft.com/v1.0/me", {
+    headers: { Authorization: "Bearer " + token }
+  });
+  if (!res.ok) throw new Error("Graph /me returned " + res.status);
+  return res.json();
+}
+
+/* ── Load saved preferences ─────────────────────────────────────────── */
 function loadPreferences() {
   const settings = Office.context.roamingSettings;
 
-  const title       = settings.get("title")       || "";
-  const newSignoff  = settings.get("newSignoff")  || settings.get("signoff") || "Kind regards"; // back-compat
-  const replySignoff= settings.get("replySignoff")|| "Thanks";
-  const ext         = settings.get("ext")         || "";
-  const phone       = settings.get("phone")       || "";
+  document.getElementById("title-select").value = settings.get("title") || "";
 
-  document.getElementById("title-select").value = title;
+  applySignoffSelection("newSignoff",
+    settings.get("newSignoff") || settings.get("signoff") || "Kind regards");
+  applySignoffSelection("replySignoff",
+    settings.get("replySignoff") || "Thanks");
 
-  applySignoffSelection("newSignoff",   newSignoff);
-  applySignoffSelection("replySignoff", replySignoff);
-
-  document.getElementById("ext-input").value   = ext;
-  document.getElementById("phone-input").value = phone;
+  document.getElementById("ext-input").value   = settings.get("ext")   || "";
+  document.getElementById("phone-input").value = settings.get("phone") || "";
 }
 
 function applySignoffSelection(prefix, value) {
   const sel = document.getElementById(prefix + "-select");
   const opt = [...sel.options].find(o => o.value === value);
+  const wrap = document.getElementById(prefix === "newSignoff" ? "newCustom-wrap" : "replyCustom-wrap");
 
   if (opt) {
     sel.value = value;
-    document.getElementById(prefix === "newSignoff" ? "newCustom-wrap" : "replyCustom-wrap").style.display = "none";
+    wrap.style.display = "none";
   } else {
     sel.value = "custom";
     document.getElementById(prefix + "-custom").value = value;
-    document.getElementById(prefix === "newSignoff" ? "newCustom-wrap" : "replyCustom-wrap").style.display = "block";
+    wrap.style.display = "block";
   }
 }
 
-/* ── Wire up UI events ──────────────────────────────────────────────── */
+/* ── Wire events ────────────────────────────────────────────────────── */
 function wireEvents() {
   ["newSignoff", "replySignoff"].forEach(prefix => {
     const sel = document.getElementById(prefix + "-select");
@@ -97,7 +133,6 @@ function wireEvents() {
   document.getElementById("btn-action").addEventListener("click", saveAndInsert);
 }
 
-/* ── Resolve a sign-off from the UI ─────────────────────────────────── */
 function resolveSignoff(prefix, fallback) {
   const sel = document.getElementById(prefix + "-select");
   if (sel.value === "custom") {
@@ -106,7 +141,7 @@ function resolveSignoff(prefix, fallback) {
   return sel.value;
 }
 
-/* ── Save preferences to RoamingSettings ────────────────────────────── */
+/* ── Save preferences ───────────────────────────────────────────────── */
 function savePreferences() {
   return new Promise((resolve) => {
     const settings = Office.context.roamingSettings;
@@ -133,7 +168,7 @@ function savePreferences() {
   });
 }
 
-/* ── Save preferences AND insert signature (single action) ──────────── */
+/* ── Save + insert (single action) ──────────────────────────────────── */
 async function saveAndInsert() {
   const btn    = document.getElementById("btn-action");
   const status = document.getElementById("action-status");
@@ -153,7 +188,7 @@ async function saveAndInsert() {
   insertSignature(() => { btn.disabled = false; });
 }
 
-/* ── Detect reply vs new message ────────────────────────────────────── */
+/* ── Reply vs new message ───────────────────────────────────────────── */
 function isReplyContext() {
   try {
     const item = Office.context.mailbox.item;
@@ -161,23 +196,22 @@ function isReplyContext() {
     if (item.subject && typeof item.subject === "string") {
       if (/^(re|fw|fwd)\s*:/i.test(item.subject.trim())) return true;
     }
-  } catch (e) { /* ignore, default to new */ }
+  } catch (e) { /* ignore */ }
   return false;
 }
 
-/* ── Build the HTML signature string ────────────────────────────────── */
+/* ── Build HTML signature ───────────────────────────────────────────── */
 function buildSignature() {
   const settings = Office.context.roamingSettings;
 
   const title        = document.getElementById("title-select").value.trim() || settings.get("title") || "";
-  const jobTitle     = document.getElementById("job-title-input").value.trim() || settings.get("jobTitle") || "";
+  const jobTitle     = document.getElementById("job-title-input").value.trim() || settings.get("jobTitle") || userProfile.jobTitle || "";
   const newSignoff   = resolveSignoff("newSignoff",   settings.get("newSignoff")   || "Kind regards");
   const replySignoff = resolveSignoff("replySignoff", settings.get("replySignoff") || "Thanks");
   const ext          = document.getElementById("ext-input").value.trim()   || settings.get("ext")   || "";
   const phone        = document.getElementById("phone-input").value.trim() || settings.get("phone") || "";
 
   const signoff = isReplyContext() ? replySignoff : newSignoff;
-
   const { displayName, mail } = userProfile;
   const fullName = title ? `${title} ${displayName}` : displayName;
 
@@ -225,7 +259,7 @@ function buildSignature() {
 `.trim();
 }
 
-/* ── Insert signature into compose body ─────────────────────────────── */
+/* ── Insert ─────────────────────────────────────────────────────────── */
 function insertSignature(done) {
   const status = document.getElementById("action-status");
   const sig    = buildSignature();
@@ -241,7 +275,6 @@ function insertSignature(done) {
         setTimeout(() => { status.textContent = ""; }, 2500);
         finish();
       } else {
-        // Fallback: prepend to body if setSignatureAsync not available
         Office.context.mailbox.item.body.prependAsync(
           `<br><br>${sig}`,
           { coercionType: Office.CoercionType.Html },
