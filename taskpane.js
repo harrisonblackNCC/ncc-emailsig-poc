@@ -110,7 +110,7 @@ async function getMsalInstance() {
       supportsNestedAppAuth:  true
     },
     cache: {
-      cacheLocation: "memoryStorage"  // avoids localStorage noise
+      cacheLocation: "localStorage"   // localStorage is recommended for NAA
     },
     system: {
       loggerOptions: {
