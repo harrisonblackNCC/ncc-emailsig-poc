@@ -6,6 +6,13 @@
   <title>NCC Email Signature Client</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <!--
+    MSAL Browser v3.x — required for Nested App Authentication (NAA).
+    NAA is Microsoft's client-side OBO pattern: MSAL detects it's running
+    inside Office, picks up the SSO token from the Office host, and swaps
+    it for a Graph token via Microsoft's auth backend — no server needed.
+  -->
+  <script src="https://alcdn.msauth.net/browser/3.27.0/js/msal-browser.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 

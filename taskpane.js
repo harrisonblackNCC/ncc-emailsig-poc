@@ -1,19 +1,36 @@
-/* NCC Email Signature Client Add-in - taskpane.js (SSO-ENABLED VERSION)
+/* NCC Email Signature Client Add-in - taskpane.js (NAA / nested auth)
  *
- * Swap this in for src/taskpane.js AFTER Daniel has:
- *   1. Created the service principal for AppId 55e5528d-7efd-4bd5-a437-0d31c68d3542
- *   2. Added the OWA client IDs to pre-authorised applications
- *   3. You've swapped future-sso/manifest.xml into manifest/manifest.xml
+ * Profile load flow:
+ *   1. MSAL.js initialises with supportsNestedAppAuth: true. Inside
+ *      Office, it picks up the SSO token from the host automatically.
+ *   2. msal.acquireTokenSilent({ scopes: ['User.Read'] }) — MSAL talks
+ *      to Microsoft's auth backend, which performs the on-behalf-of
+ *      swap and hands back a Graph token. No backend on our side.
+ *   3. We call Graph /me directly with that Graph token to pull
+ *      jobTitle (plus displayName + mail as a bonus).
+ *   4. If anything fails: fall back to Office.context.mailbox.userProfile
+ *      (name + email still work, but no auto jobTitle).
  *
- * This version:
- *   - Tries Office SSO first to pull name/email/jobTitle from Graph
- *   - Falls back to Office.context.mailbox.userProfile + manual jobTitle if SSO fails
- *     (so if SP is ever accidentally removed, the add-in still works)
+ * Why NAA over a backend:
+ *   NAA (Nested App Authentication) is Microsoft's 2024 pattern that
+ *   lets Office add-ins do OBO without standing up a server. The SSO
+ *   token can't be sent to Graph directly because of audience mismatch,
+ *   but MSAL inside Office does the swap server-side via Microsoft's
+ *   own auth servers. Trade-off: we need MSAL.js loaded in the page,
+ *   and the Outlook host has to be a recent version that supports NAA
+ *   (OWA / New Outlook on Windows / Outlook Mobile — Classic Outlook
+ *   for Windows does NOT support NAA, so it falls back to mailbox-only).
  */
 
 const LOGO_URL  = "https://www.ncc.qld.edu.au/wp-content/uploads/NCC-Email_600x200.jpg";
 const LOGO_TARGET_WIDTH = 430;
-const SSO_TIMEOUT_MS = 4000;   // give up on SSO after 4s and fall back
+const SSO_TIMEOUT_MS = 6000;   // give up on the whole NAA + Graph chain after 6s
+
+// Entra app registration for the add-in's API.
+const CLIENT_ID  = "55e5528d-7efd-4bd5-a437-0d31c68d3542";
+// Authority targets the NCC tenant. Using the verified domain is
+// equivalent to the tenant GUID and keeps this code free of magic IDs.
+const AUTHORITY  = "https://login.microsoftonline.com/nambourcc.onmicrosoft.com";
 
 let userProfile = { displayName: "", jobTitle: "", mail: "" };
 let logoAspect  = 600 / 200;
@@ -51,11 +68,7 @@ async function loadProfile() {
   };
 
   try {
-    const token = await withTimeout(
-      Office.auth.getAccessToken({ allowSignInPrompt: true, forMSGraphAccess: true }),
-      SSO_TIMEOUT_MS
-    );
-    const me = await fetchGraphMe(token);
+    const me = await withTimeout(loadProfileViaNAA(), SSO_TIMEOUT_MS);
     userProfile.displayName = me.displayName || "";
     userProfile.mail        = me.mail || me.userPrincipalName || "";
     userProfile.jobTitle    = me.jobTitle
@@ -72,11 +85,68 @@ async function loadProfile() {
       } catch (e) { /* ignore */ }
     }
   } catch (err) {
-    console.warn("SSO/Graph failed, falling back to mailbox.userProfile:", err);
+    console.warn("NAA/Graph chain failed, falling back to mailbox.userProfile:", err);
     mailboxFallback();
   }
 
   renderProfile();
+}
+
+/* Lazy-init MSAL with Nested App Authentication. The
+ * supportsNestedAppAuth flag tells MSAL to look for an Office host
+ * and use its SSO token as the assertion for OBO, rather than
+ * starting an interactive flow.
+ */
+let _msalInstance = null;
+async function getMsalInstance() {
+  if (_msalInstance) return _msalInstance;
+  if (typeof msal === "undefined" || !msal.PublicClientNext) {
+    throw new Error("MSAL Browser not loaded — check the script tag in taskpane.html");
+  }
+  _msalInstance = await msal.PublicClientNext.createPublicClientApplication({
+    auth: {
+      clientId:               CLIENT_ID,
+      authority:              AUTHORITY,
+      supportsNestedAppAuth:  true
+    },
+    cache: {
+      cacheLocation: "memoryStorage"  // avoids localStorage noise
+    },
+    system: {
+      loggerOptions: {
+        logLevel: msal.LogLevel.Warning,
+        loggerCallback: (level, message) => {
+          if (level <= msal.LogLevel.Warning) console.log("[MSAL]", message);
+        }
+      }
+    }
+  });
+  return _msalInstance;
+}
+
+/* Acquire a Graph token via NAA, then call /me. Throws on any failure
+ * so the caller falls back to mailbox.userProfile.
+ */
+async function loadProfileViaNAA() {
+  const pca = await getMsalInstance();
+
+  const tokenResult = await pca.acquireTokenSilent({
+    scopes: ["User.Read"]
+  });
+
+  if (!tokenResult || !tokenResult.accessToken) {
+    throw new Error("MSAL acquireTokenSilent returned no access token");
+  }
+
+  const res = await fetch(
+    "https://graph.microsoft.com/v1.0/me?$select=displayName,mail,userPrincipalName,jobTitle",
+    { headers: { Authorization: "Bearer " + tokenResult.accessToken } }
+  );
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Graph /me returned ${res.status}: ${text}`);
+  }
+  return res.json();
 }
 
 function renderProfile() {
@@ -90,14 +160,6 @@ function withTimeout(promise, ms) {
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error("SSO timeout")), ms))
   ]);
-}
-
-async function fetchGraphMe(token) {
-  const res = await fetch("https://graph.microsoft.com/v1.0/me", {
-    headers: { Authorization: "Bearer " + token }
-  });
-  if (!res.ok) throw new Error("Graph /me returned " + res.status);
-  return res.json();
 }
 
 /* ── Load saved preferences ─────────────────────────────────────────── */
