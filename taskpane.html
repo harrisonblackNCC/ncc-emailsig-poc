@@ -4,27 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>NCC Email Signature Client</title>
-
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-
-  <!-- Office.js -->
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-
-  <!-- ✅ MSAL.js (for Graph popup auth, no Office SSO) -->
-  <script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
-
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
       background: #ffffff;
       color: #333333;
       font-size: 13px;
     }
+
     .section {
       padding: 14px 16px;
       border-bottom: 1px solid #f0f0f0;
     }
+
     .section-label {
       font-size: 10px;
       font-weight: bold;
@@ -33,6 +29,19 @@
       letter-spacing: 0.8px;
       margin-bottom: 10px;
     }
+
+    .sub-heading {
+      font-size: 10.5px;
+      font-weight: bold;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 16px;
+      margin-bottom: 6px;
+    }
+    .section-label + .sub-heading { margin-top: 2px; }
+    .sub-heading + label.field-label { margin-top: 0; }
+
     .locked-field {
       background: #f7f7f7;
       border: 1px solid #e8e8e8;
@@ -45,6 +54,14 @@
       align-items: center;
       gap: 10px;
     }
+    .locked-field .value {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .locked-badge {
       font-size: 9px;
       background: #e8e8e8;
@@ -53,6 +70,51 @@
       border-radius: 3px;
       flex-shrink: 0;
     }
+
+    .it-disclaimer {
+      font-size: 10.5px;
+      color: #888;
+      line-height: 1.4;
+      margin-top: 14px;
+      padding: 8px 10px;
+      background: #fbfaf5;
+      border-left: 2px solid #e6d89a;
+      border-radius: 0 3px 3px 0;
+    }
+    .it-disclaimer strong { color: #6b5a1f; }
+
+    label.field-label {
+      display: block;
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 5px;
+      margin-top: 14px;
+    }
+    label.field-label:first-of-type { margin-top: 0; }
+
+    .hint {
+      font-size: 10px;
+      color: #aaa;
+      margin-top: 3px;
+    }
+
+    select, input[type="text"] {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 12px;
+      color: #333;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    select:focus, input[type="text"]:focus { border-color: #005953; }
+
+    .custom-input-wrap { margin-top: 6px; }
+
     .btn-action {
       display: block;
       width: 100%;
@@ -61,68 +123,142 @@
       color: #fff;
       border: none;
       border-radius: 4px;
+      font-family: inherit;
       font-size: 12.5px;
       font-weight: bold;
       cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: background 0.15s;
       margin-top: 18px;
     }
-    .btn-action:disabled {
-      background: #ccc;
-      cursor: default;
-    }
+    .btn-action:hover { background: #c62b1f; }
+    .btn-action:disabled { background: #ccc; cursor: default; }
+
     .status {
       font-size: 11px;
       color: #005953;
       margin-top: 8px;
+      min-height: 16px;
       text-align: center;
     }
+
+    .status.error { color: #ec3426; }
+
     .loading {
       padding: 24px 16px;
       text-align: center;
       color: #999;
       font-size: 12px;
     }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #e8e8e8;
+      border-top-color: #005953;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
-
 <body>
 
   <div id="loading" class="loading">
-    Loading your profile…
+    <div class="spinner"></div>
+    Loading your profile...
   </div>
 
   <div id="main" style="display:none;">
+
+    <!-- Profile -->
     <div class="section">
       <div class="section-label">Profile</div>
 
-      <label>Name</label>
+      <label class="field-label" for="title-select">Title</label>
+      <select id="title-select">
+        <option value="">None</option>
+        <option value="Mr">Mr</option>
+        <option value="Mrs">Mrs</option>
+        <option value="Ms">Ms</option>
+        <option value="Miss">Miss</option>
+        <option value="Dr">Dr</option>
+        <option value="Rev">Rev</option>
+      </select>
+
+      <label class="field-label">Name</label>
       <div class="locked-field">
-        <span id="display-name">—</span>
+        <span class="value" id="display-name">—</span>
         <span class="locked-badge">auto</span>
       </div>
 
-      <label>Role</label>
+      <label class="field-label">Role</label>
       <div class="locked-field">
-        <span id="job-title">—</span>
+        <span class="value" id="job-title">—</span>
+        <span class="locked-badge">auto</span>
+      </div>
+    </div>
+
+    <!-- Personalise -->
+    <div class="section">
+      <div class="section-label">Personalise Your Signature</div>
+
+      <div class="sub-heading">Sign-offs</div>
+      <label class="field-label" for="newSignoff-select">For new emails</label>
+      <select id="newSignoff-select">
+        <option value="Kind regards">Kind regards</option>
+        <option value="Warm regards">Warm regards</option>
+        <option value="Blessings">Blessings</option>
+        <option value="Thanks">Thanks</option>
+        <option value="Many thanks">Many thanks</option>
+        <option value="custom">Custom...</option>
+      </select>
+      <div class="custom-input-wrap" id="newCustom-wrap" style="display:none;">
+        <input type="text" id="newSignoff-custom" placeholder="e.g. Grace and peace" maxlength="50" />
+      </div>
+
+      <label class="field-label" for="replySignoff-select">For replies</label>
+      <select id="replySignoff-select">
+        <option value="Kind regards">Kind regards</option>
+        <option value="Warm regards">Warm regards</option>
+        <option value="Blessings">Blessings</option>
+        <option value="Thanks">Thanks</option>
+        <option value="Many thanks">Many thanks</option>
+        <option value="custom">Custom...</option>
+      </select>
+      <div class="custom-input-wrap" id="replyCustom-wrap" style="display:none;">
+        <input type="text" id="replySignoff-custom" placeholder="e.g. Cheers" maxlength="50" />
+      </div>
+    </div>
+
+    <!-- Contact Details -->
+    <div class="section">
+      <div class="section-label">Contact Details</div>
+
+      <label class="field-label">Email</label>
+      <div class="locked-field">
+        <span class="value" id="email">—</span>
         <span class="locked-badge">auto</span>
       </div>
 
-      <label>Email</label>
-      <div class="locked-field">
-        <span id="email">—</span>
-        <span class="locked-badge">auto</span>
+      <label class="field-label" for="ext-input">Extension (optional)</label>
+      <input type="text" id="ext-input" placeholder="e.g. 12345" maxlength="10" />
+
+      <label class="field-label" for="phone-input">Direct line (optional)</label>
+      <input type="text" id="phone-input" placeholder="e.g. (07) 5451 3333" maxlength="30" />
+
+      <div class="it-disclaimer">
+        <strong>Can't seem to edit something?</strong> Name, email and role come from your M365 profile. Contact IT to update them.
       </div>
 
-      <button class="btn-action" id="btn-action">
-        Save & insert signature
-      </button>
-
+      <button class="btn-action" id="btn-action">Save &amp; insert signature</button>
       <div class="status" id="action-status"></div>
     </div>
+
   </div>
 
-  <!-- Your logic (uses MSAL popup auth) -->
   <script src="taskpane.js"></script>
-
 </body>
 </html>
