@@ -544,7 +544,8 @@ Rev</textarea>
       const addressLine = [cfg.address, cfg.poBox].filter(Boolean).join(" | ");
 
       const extLine = ` <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">${cfg.labels.ext} </span></strong><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;">${sampleExt}</span></strong>`;
-      const phoneLine = ` <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">${cfg.labels.phone} </span></strong><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;">${samplePhone}</span></strong>`;
+      const samplePhoneHref = samplePhone.replace(/[^+\d]/g, "");
+      const phoneLine = ` <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">${cfg.labels.phone} </span></strong><strong><u><a href="tel:${samplePhoneHref}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${samplePhone}</a></u></strong>`;
 
       return `
 <p style="margin:0pt;line-height:normal;background-color:#ffffff;">
