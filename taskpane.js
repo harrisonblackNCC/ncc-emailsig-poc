@@ -152,7 +152,18 @@ async function loadProfileViaNAA() {
 function renderProfile() {
   document.getElementById("display-name").textContent = userProfile.displayName || "—";
   document.getElementById("email").textContent        = userProfile.mail        || "—";
-  document.getElementById("job-title").textContent    = userProfile.jobTitle    || "—";
+
+  // Role: editable, pre-filled with the user's saved override if any,
+  // otherwise the latest M365 jobTitle. Don't clobber a value the user
+  // is currently typing into.
+  const roleInput = document.getElementById("role-input");
+  if (roleInput && document.activeElement !== roleInput) {
+    const settings = Office.context.roamingSettings;
+    const override = settings.get("jobTitleOverride");
+    roleInput.value = (override !== undefined && override !== null && override !== "")
+      ? override
+      : (userProfile.jobTitle || "");
+  }
 }
 
 function withTimeout(promise, ms) {
@@ -230,9 +241,17 @@ function savePreferences() {
     settings.set("ext",          ext);
     settings.set("phone",        phone);
 
-    // jobTitle is auto-pulled from Entra only — not user-editable. The
-    // cached copy in roamingSettings is maintained by launchevent.js and
-    // the loadProfile() SSO call so it stays fresh.
+    // Role: user can override the M365 jobTitle. Empty string = "use the
+    // M365 default". The cached "jobTitle" key (set by loadProfile + the
+    // launchevent SSO call) stays as the upstream source of truth.
+    const roleInput = document.getElementById("role-input");
+    const roleValue = roleInput ? roleInput.value.trim() : "";
+    const upstreamJobTitle = (settings.get("jobTitle") || userProfile.jobTitle || "").trim();
+    if (roleValue && roleValue !== upstreamJobTitle) {
+      settings.set("jobTitleOverride", roleValue);
+    } else {
+      settings.set("jobTitleOverride", "");
+    }
 
     settings.saveAsync((result) => {
       resolve(result.status === Office.AsyncResultStatus.Succeeded);
@@ -277,7 +296,16 @@ function buildSignature() {
   const settings = Office.context.roamingSettings;
 
   const title        = document.getElementById("title-select").value.trim() || settings.get("title") || "";
-  const jobTitle     = userProfile.jobTitle || settings.get("jobTitle") || "";
+
+  // Role: prefer (1) what's currently in the input, then (2) saved override,
+  // then (3) live M365 jobTitle, then (4) cached jobTitle.
+  const roleInputEl  = document.getElementById("role-input");
+  const liveRole     = roleInputEl ? roleInputEl.value.trim() : "";
+  const jobTitle     = liveRole
+                       || settings.get("jobTitleOverride")
+                       || userProfile.jobTitle
+                       || settings.get("jobTitle")
+                       || "";
   const newSignoff   = resolveSignoff("newSignoff",   settings.get("newSignoff")   || "Kind regards");
   const replySignoff = resolveSignoff("replySignoff", settings.get("replySignoff") || "Thanks");
   const ext          = document.getElementById("ext-input").value.trim()   || settings.get("ext")   || "";

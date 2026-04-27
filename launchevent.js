@@ -47,9 +47,13 @@ async function onNewMessageComposeHandler(event) {
     const displayName = profile.displayName  || "";
     const mail        = profile.emailAddress || "";
 
-    // Try SSO → Graph for jobTitle. Headless context, so must be silent.
-    // Falls back to RoamingSettings, then to empty (and line is omitted).
-    const jobTitle = await resolveJobTitle(settings);
+    // Role logic:
+    //  1. If staff have explicitly overridden their role in the taskpane,
+    //     respect that — don't override their override.
+    //  2. Otherwise try SSO → Graph for the live M365 jobTitle.
+    //  3. Fall back to RoamingSettings cache, then to empty.
+    const override = (settings.get("jobTitleOverride") || "").trim();
+    const jobTitle = override || await resolveJobTitle(settings);
 
     const signoff  = isReplyContext(item) ? replySignoff : newSignoff;
     const fullName = title ? `${title} ${displayName}` : displayName;

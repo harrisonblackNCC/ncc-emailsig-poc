@@ -201,11 +201,8 @@
         <span class="locked-badge">auto</span>
       </div>
 
-      <label class="field-label">Role</label>
-      <div class="locked-field">
-        <span class="value" id="job-title">—</span>
-        <span class="locked-badge">auto</span>
-      </div>
+      <label class="field-label" for="role-input">Role</label>
+      <input type="text" id="role-input" placeholder="Pre-filled from M365 — edit if it's outdated" maxlength="80" />
     </div>
 
     <!-- Personalise -->
@@ -265,7 +262,7 @@
       <input type="text" id="phone-input" placeholder="e.g. (07) 5451 3333" maxlength="30" />
 
       <div class="it-disclaimer">
-        <strong>Can't seem to edit something?</strong> Name, email and role come from your M365 profile. Contact IT to update them.
+        <strong>Can't seem to edit something?</strong> Name and email come from your M365 profile. Contact IT to update them.
       </div>
 
       <button class="btn-action" id="btn-action">Apply changes to signature</button>
