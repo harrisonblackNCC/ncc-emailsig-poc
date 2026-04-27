@@ -215,11 +215,15 @@
       <div class="sub-heading">Sign-offs</div>
       <label class="field-label" for="newSignoff-select">For new emails</label>
       <select id="newSignoff-select">
+        <option value="">None (no sign-off)</option>
         <option value="Kind regards">Kind regards</option>
         <option value="Warm regards">Warm regards</option>
-        <option value="Blessings">Blessings</option>
         <option value="Thanks">Thanks</option>
         <option value="Many thanks">Many thanks</option>
+        <option value="Gratefully">Gratefully</option>
+        <option value="Blessings">Blessings</option>
+        <option value="God bless">God bless</option>
+        <option value="Yours in Christ">Yours in Christ</option>
         <option value="custom">Custom...</option>
       </select>
       <div class="custom-input-wrap" id="newCustom-wrap" style="display:none;">
@@ -228,11 +232,15 @@
 
       <label class="field-label" for="replySignoff-select">For replies</label>
       <select id="replySignoff-select">
+        <option value="">None (no sign-off)</option>
         <option value="Kind regards">Kind regards</option>
         <option value="Warm regards">Warm regards</option>
-        <option value="Blessings">Blessings</option>
         <option value="Thanks">Thanks</option>
         <option value="Many thanks">Many thanks</option>
+        <option value="Gratefully">Gratefully</option>
+        <option value="Blessings">Blessings</option>
+        <option value="God bless">God bless</option>
+        <option value="Yours in Christ">Yours in Christ</option>
         <option value="custom">Custom...</option>
       </select>
       <div class="custom-input-wrap" id="replyCustom-wrap" style="display:none;">
@@ -260,7 +268,7 @@
         <strong>Can't seem to edit something?</strong> Name, email and role come from your M365 profile. Contact IT to update them.
       </div>
 
-      <button class="btn-action" id="btn-action">Save &amp; insert signature</button>
+      <button class="btn-action" id="btn-action">Apply changes to signature</button>
       <div class="status" id="action-status"></div>
     </div>
 

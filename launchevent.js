@@ -146,10 +146,16 @@ function buildSignature({ signoff, fullName, jobTitle, mail, ext, phone }) {
 </p>`
     : "";
 
-  return `
-<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
+  // signoff "" = staff picked "None" — skip the sign-off paragraph
+  // entirely so we don't render a lone comma above the name.
+  const signoffPara = signoff
+    ? `<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;">${signoff},</span></strong>
-</p>
+</p>`
+    : "";
+
+  return `
+${signoffPara}
 <p style="margin:0pt;margin-bottom:10pt;line-height:normal;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#ec3426;">${fullName}</span></strong>
 </p>

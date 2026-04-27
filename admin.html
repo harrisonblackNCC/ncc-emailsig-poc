@@ -301,6 +301,59 @@
       line-height: 1.5;
     }
     .note strong { color: #885; }
+
+    /* End-user permissions — toggle switches */
+    .perm-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 9px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .perm-row:last-child { border-bottom: none; }
+    .perm-text { flex: 1; min-width: 0; }
+    .perm-text .perm-label {
+      font-size: 12px;
+      color: #333;
+      font-weight: 600;
+      letter-spacing: 0.1px;
+    }
+    .perm-text .perm-sub {
+      font-size: 10.5px;
+      color: #888;
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+    .toggle {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle .slider {
+      position: absolute;
+      inset: 0;
+      background: #ccc;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .toggle .slider::before {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.15s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .toggle input:checked + .slider { background: #005953; }
+    .toggle input:checked + .slider::before { transform: translateX(16px); }
   </style>
 </head>
 <body>
@@ -366,13 +419,16 @@
 
       <div class="section">
         <div class="section-label">Sign-off Options</div>
-        <div class="hint">One per line. Staff pick from these in their taskpane. "Custom..." is automatic — don't add it here.</div>
+        <div class="hint">One per line. Staff pick from these in their taskpane. "None" and "Custom..." are automatic — don't add them here.</div>
         <label class="field-label" for="cfg-signoffs" style="margin-top: 10px;">Available sign-offs</label>
-        <textarea id="cfg-signoffs" rows="6">Kind regards
+        <textarea id="cfg-signoffs" rows="10">Kind regards
 Warm regards
-Blessings
 Thanks
-Many thanks</textarea>
+Many thanks
+Gratefully
+Blessings
+God bless
+Yours in Christ</textarea>
       </div>
 
       <div class="section">
@@ -405,13 +461,84 @@ Rev</textarea>
       </div>
 
       <div class="section">
+        <div class="section-label">End User Permissions</div>
+        <div class="hint">Toggle which fields staff can edit from their personal Signature taskpane. Off = locked to whatever's pulled from M365 / set as default.</div>
+
+        <div class="perm-row">
+          <div class="perm-text">
+            <div class="perm-label">Title prefix</div>
+            <div class="perm-sub">Mr / Mrs / Dr / Rev etc.</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="perm-title" checked /><span class="slider"></span></label>
+        </div>
+
+        <div class="perm-row">
+          <div class="perm-text">
+            <div class="perm-label">Display name</div>
+            <div class="perm-sub">Override the name pulled from M365.</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="perm-name" /><span class="slider"></span></label>
+        </div>
+
+        <div class="perm-row">
+          <div class="perm-text">
+            <div class="perm-label">Job title / role</div>
+            <div class="perm-sub">Override the title pulled from M365.</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="perm-jobtitle" checked /><span class="slider"></span></label>
+        </div>
+
+        <div class="perm-row">
+          <div class="perm-text">
+            <div class="perm-label">Email address</div>
+            <div class="perm-sub">Override the address pulled from M365.</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="perm-email" /><span class="slider"></span></label>
+        </div>
+
+        <div class="perm-row">
+          <div class="perm-text">
+            <div class="perm-label">Phone extension</div>
+            <div class="perm-sub">Internal extension number.</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="perm-ext" checked /><span class="slider"></span></label>
+        </div>
+
+        <div class="perm-row">
+          <div class="perm-text">
+            <div class="perm-label">Direct phone line</div>
+            <div class="perm-sub">Personal direct dial — appears as a tel: link.</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="perm-phone" checked /><span class="slider"></span></label>
+        </div>
+
+        <div class="perm-row">
+          <div class="perm-text">
+            <div class="perm-label">New message sign-off</div>
+            <div class="perm-sub">Picks from the list above (e.g. Kind regards).</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="perm-signoff-new" checked /><span class="slider"></span></label>
+        </div>
+
+        <div class="perm-row">
+          <div class="perm-text">
+            <div class="perm-label">Reply sign-off</div>
+            <div class="perm-sub">Often shorter than the new-message one.</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="perm-signoff-reply" checked /><span class="slider"></span></label>
+        </div>
+
+        <div class="hint" style="margin-top: 14px;">Heads up: real enforcement on the live taskpane needs the v1.5 backend. For now the toggles save to the exported config JSON so the wiring's ready when the backend lands.</div>
+      </div>
+
+      <div class="section">
         <div class="section-label">Save Changes</div>
         <div class="btn-row">
           <button class="btn btn-copy" id="btn-copy">Copy config JSON</button>
           <button class="btn btn-download" id="btn-download">Download JSON</button>
         </div>
         <div class="btn-row" style="margin-top: 8px;">
-          <button class="btn btn-download-img" id="btn-download-img" disabled>Download uploaded image</button>
+          <button class="btn btn-download-img" id="btn-download-img">Apply changes to signature</button>
         </div>
         <div class="status" id="action-status"></div>
         <div class="instructions">
@@ -528,9 +655,55 @@ Rev</textarea>
           ext:    val("cfg-label-ext"),
           phone:  val("cfg-label-phone"),
           cricos: val("cfg-label-cricos")
+        },
+        endUserPermissions: {
+          title:         checked("perm-title"),
+          name:          checked("perm-name"),
+          jobTitle:      checked("perm-jobtitle"),
+          email:         checked("perm-email"),
+          extension:     checked("perm-ext"),
+          phone:         checked("perm-phone"),
+          signoffNew:    checked("perm-signoff-new"),
+          signoffReply:  checked("perm-signoff-reply")
         }
       };
     }
+
+    function checked(id) {
+      const el = document.getElementById(id);
+      return el ? !!el.checked : false;
+    }
+
+    /* Persist toggle state across reloads so the admin doesn't have to
+       re-set them every visit. Real enforcement still requires the v1.5
+       backend — this is just admin-side UX. */
+    (function wirePermissionToggles() {
+      const ids = ["perm-title", "perm-name", "perm-jobtitle", "perm-email",
+                   "perm-ext", "perm-phone", "perm-signoff-new", "perm-signoff-reply"];
+      const KEY = "ncc-sig-admin-perms-v1";
+      try {
+        const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+        ids.forEach(id => {
+          if (saved.hasOwnProperty(id)) {
+            const el = document.getElementById(id);
+            if (el) el.checked = !!saved[id];
+          }
+        });
+      } catch (e) { /* ignore parse errors */ }
+
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener("change", () => {
+          const state = {};
+          ids.forEach(i => {
+            const e = document.getElementById(i);
+            if (e) state[i] = !!e.checked;
+          });
+          try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+        });
+      });
+    })();
 
     function buildSignature(mode) {
       const cfg = getConfig({ forExport: false });
@@ -547,10 +720,16 @@ Rev</textarea>
       const samplePhoneHref = samplePhone.replace(/[^+\d]/g, "");
       const phoneLine = ` <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">${cfg.labels.phone} </span></strong><strong><u><a href="tel:${samplePhoneHref}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${samplePhone}</a></u></strong>`;
 
-      return `
-<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
+      // signoff "" = staff picked "None" — skip the sign-off paragraph
+      // entirely so we don't render a lone comma above the name.
+      const signoffPara = signoff
+        ? `<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;">${signoff},</span></strong>
-</p>
+</p>`
+        : "";
+
+      return `
+${signoffPara}
 <p style="margin:0pt;margin-bottom:10pt;line-height:normal;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#ec3426;">${fullName}</span></strong>
 </p>
@@ -724,8 +903,21 @@ Rev</textarea>
     });
 
     document.getElementById("btn-download-img").addEventListener("click", () => {
+      // "Apply changes to signature" — bundle export.
+      // v1.4 has no live backend, so applying = downloading config JSON
+      // (+ image if one was uploaded) ready for WordPress / re-deploy.
+      const cfgBlob = new Blob([buildConfigJson()], { type: "application/json" });
+      const cfgUrl  = URL.createObjectURL(cfgBlob);
+      const cfgA = document.createElement("a");
+      cfgA.href = cfgUrl;
+      cfgA.download = "signature-config.json";
+      document.body.appendChild(cfgA);
+      cfgA.click();
+      document.body.removeChild(cfgA);
+      URL.revokeObjectURL(cfgUrl);
+
       if (!uploadedImageBlob) {
-        showStatus("No image uploaded yet", true);
+        showStatus("\u2713 Config downloaded \u2014 no new image to apply");
         return;
       }
       const url = URL.createObjectURL(uploadedImageBlob);
