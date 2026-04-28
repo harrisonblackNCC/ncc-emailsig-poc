@@ -112,13 +112,24 @@ async function onNewMessageComposeHandler(event) {
     const savedOrg = settings.get("org");
     const orgKey   = (savedOrg && ORGS[savedOrg]) ? savedOrg : "ncc";
 
-    // Pull live aspect ratio cached by the taskpane on its last image load,
-    // so the signature image renders proportionally even if the logo is
-    // ever swapped for a different shape. Falls back to the hardcoded
-    // default in ORGS if no cache exists yet.
+    // Pull live aspect ratio. Preference order:
+    //  1. Cached value written by taskpane on its last image load
+    //  2. Live detection via Image() — covers the never-opened-taskpane
+    //     case so the auto-applied signature renders correctly on the
+    //     very first compose
+    //  3. Hardcoded ORGS default (last-resort if image fetch fails)
     const cachedAspect = settings.get("logoAspect_" + orgKey);
     if (typeof cachedAspect === "number" && cachedAspect > 0) {
       ORGS[orgKey].aspect = cachedAspect;
+    } else {
+      const live = await detectAspectLive(ORGS[orgKey].logoUrl, 1500);
+      if (live && live > 0) {
+        ORGS[orgKey].aspect = live;
+        try {
+          settings.set("logoAspect_" + orgKey, live);
+          settings.saveAsync(() => {});
+        } catch (e) { /* fire & forget */ }
+      }
     }
 
     const sig = buildSignature({ signoff, fullName, jobTitle, mail, ext, phone, whText, orgKey });
@@ -191,6 +202,35 @@ function isReplyContext(item) {
     }
   } catch (e) { /* default to new */ }
   return false;
+}
+
+/* ── Live aspect-ratio detection ─────────────────────────────────────
+   Loads the logo image in the background and reads naturalWidth/Height.
+   Returns aspect (w / h) or null on timeout/error. No crossOrigin —
+   naturalWidth/Height are readable without CORS, and setting "anonymous"
+   would fail loads from servers that don't send CORS headers. */
+function detectAspectLive(url, timeoutMs) {
+  return new Promise(function (resolve) {
+    var resolved = false;
+    function finish(value) {
+      if (resolved) return;
+      resolved = true;
+      resolve(value);
+    }
+    try {
+      var img = new Image();
+      img.onload = function () {
+        if (img.naturalWidth && img.naturalHeight) {
+          finish(img.naturalWidth / img.naturalHeight);
+        } else {
+          finish(null);
+        }
+      };
+      img.onerror = function () { finish(null); };
+      img.src = url;
+    } catch (e) { finish(null); }
+    setTimeout(function () { finish(null); }, timeoutMs || 1500);
+  });
 }
 
 /* ── Working hours helpers (kept identical to taskpane.js) ──────────── */

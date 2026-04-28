@@ -232,6 +232,7 @@
 
     .mode-toggle {
       display: inline-flex;
+      flex-wrap: wrap;
       background: #fff;
       border: 1px solid #d8d8d8;
       border-radius: 6px;
@@ -243,14 +244,35 @@
       border: none;
       padding: 7px 16px;
       font-size: 12px;
-      color: #666;
+      color: #555;
       cursor: pointer;
       font-family: inherit;
+      transition: background 0.12s, color 0.12s;
+    }
+    /* Visible divider between adjacent buttons. */
+    .mode-toggle button + button {
+      border-left: 1px solid #e3e3e3;
+    }
+    .mode-toggle button:not(.active):hover {
+      background: #f1f1f1;
+      color: #222;
     }
     .mode-toggle button.active {
       background: #005953;
       color: #fff;
       font-weight: bold;
+    }
+    /* Variants visually marked as admin-created so they don't read as
+       another base org. Italic + slightly muted in the inactive state. */
+    .mode-toggle button[data-variant-key] {
+      font-style: italic;
+      color: #777;
+    }
+    .mode-toggle button[data-variant-key]:not(.active):hover {
+      color: #222;
+    }
+    .mode-toggle button[data-variant-key].active {
+      color: #fff;
     }
 
     .email-mock {
