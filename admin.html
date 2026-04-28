@@ -561,6 +561,11 @@ Rev</textarea>
         <button id="mode-reply" data-mode="reply">Reply</button>
       </div>
 
+      <div class="mode-toggle" style="margin-left: 8px;">
+        <button id="org-ncc" class="active" data-org="ncc">Nambour Christian College</button>
+        <button id="org-group" data-org="group">NCC Education Group</button>
+      </div>
+
       <div class="email-mock">
         <div class="email-header">
           <div class="row"><span class="lbl">To:</span><span>example@ncc.qld.edu.au</span></div>
@@ -602,6 +607,29 @@ Rev</textarea>
     let uploadedImageBlob = null;
     let uploadedImageName = null;
     let currentMode = "new";
+    let currentOrg  = "ncc";
+
+    // Per-org overrides for the preview signature. Mirrors ORGS in
+    // taskpane.js / launchevent.js. The "ncc" entry inherits the
+    // editable cfg fields so admins can tweak branding live; "group"
+    // hard-overrides the logo + drops the school-details block, since
+    // that org's composite logo carries that info.
+    const ORGS_PREVIEW = {
+      ncc: {
+        affiliationText: "",
+        showSchoolDetails: true,
+        logoOverride: null,            // null = use cfg.logoUrl
+        aspectOverride: null,          // null = use detected logoAspect
+        displayNameOverride: null      // null = use cfg.collegeName
+      },
+      group: {
+        affiliationText: "NCC Education Group",
+        showSchoolDetails: false,
+        logoOverride: "https://www.ncc.qld.edu.au/wp-content/uploads/cc118d61-7fab-4089-93fd-6dc007d00674.jpg",
+        aspectOverride: 600 / 150,
+        displayNameOverride: "NCC Education Group"
+      }
+    };
 
     // Signature image sizing — width is fixed, height is derived from the
     // actual logo's aspect ratio so any future image just works.
@@ -705,8 +733,9 @@ Rev</textarea>
       });
     })();
 
-    function buildSignature(mode) {
+    function buildSignature(mode, orgKey) {
       const cfg = getConfig({ forExport: false });
+      const org = ORGS_PREVIEW[orgKey] || ORGS_PREVIEW.ncc;
       const { displayName, jobTitle, mail } = userProfile;
       const signoff = mode === "reply"
         ? (cfg.signoffs[Math.min(3, cfg.signoffs.length - 1)] || "Thanks")  // 4th = "Thanks" in default list
@@ -715,6 +744,13 @@ Rev</textarea>
       const sampleExt = "12345";
       const samplePhone = "(07) 5451 3300";
       const addressLine = [cfg.address, cfg.poBox].filter(Boolean).join(" | ");
+
+      // Org-aware overrides. ncc inherits cfg so the editable form fields
+      // still drive the preview; group hard-overrides the logo + drops
+      // the school-details block.
+      const logoUrl    = org.logoOverride    || cfg.logoUrl;
+      const aspect     = org.aspectOverride  || logoAspect;
+      const altText    = org.displayNameOverride || cfg.collegeName;
 
       const extLine = ` <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">${cfg.labels.ext} </span></strong><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;">${sampleExt}</span></strong>`;
       const samplePhoneHref = samplePhone.replace(/[^+\d]/g, "");
@@ -728,21 +764,14 @@ Rev</textarea>
 </p>`
         : "";
 
-      return `
-${signoffPara}
-<p style="margin:0pt;margin-bottom:12pt;line-height:13pt;background-color:#ffffff;">
-  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#ec3426;">${fullName}</span></strong>
-</p>
-<p style="margin:0pt;line-height:12pt;background-color:#ffffff;">
-  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#005953;">${jobTitle}</span></strong>
-</p>
-<p style="margin:0pt;line-height:10pt;background-color:#ffffff;">
-  <strong><em><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#005953;">Working:</span></em></strong><em><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#000000;"> Tuesday-Thursday 9am-2pm, Friday 9am-1:30pm</span></em>
-</p>
-<p style="margin:0pt;line-height:10pt;font-size:9pt;background-color:#ffffff;">
-  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">${cfg.labels.email} </span></strong><strong><u><a href="mailto:${mail}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${mail}</a></u></strong>${extLine}${phoneLine}
-</p>
-<p style="margin:0pt;margin-top:12pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
+      const affiliationPara = org.affiliationText
+        ? `<p style="margin:0pt;line-height:12pt;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#005953;">${org.affiliationText}</span></strong>
+</p>`
+        : "";
+
+      const schoolDetailsBlock = org.showSchoolDetails
+        ? `<p style="margin:0pt;margin-top:12pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">${cfg.collegeName}</span></strong>
 </p>
 <p style="margin:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
@@ -754,9 +783,29 @@ ${signoffPara}
   <a href="mailto:${cfg.infoEmail}" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">${cfg.infoEmail}</span></strong></a>
   <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#333333;"> | </span>
   <a href="https://${cfg.website.replace(/^https?:\/\//,'')}" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">${cfg.website}</span></strong></a>
+</p>`
+        : "";
+
+      const logoMarginTop = org.showSchoolDetails ? "0pt" : "12pt";
+
+      return `
+${signoffPara}
+<p style="margin:0pt;margin-bottom:12pt;line-height:13pt;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#ec3426;">${fullName}</span></strong>
 </p>
-<p style="margin:0pt;line-height:normal;font-size:11pt;background-color:#ffffff;">
-  <img src="${cfg.logoUrl}" width="${LOGO_TARGET_WIDTH}" height="${Math.round(LOGO_TARGET_WIDTH / logoAspect)}" alt="${cfg.collegeName}" style="display:block;border:0;">
+<p style="margin:0pt;line-height:12pt;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#005953;">${jobTitle}</span></strong>
+</p>
+${affiliationPara}
+<p style="margin:0pt;line-height:10pt;background-color:#ffffff;">
+  <strong><em><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#005953;">Working:</span></em></strong><em><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#000000;"> Tuesday-Thursday 9am-2pm, Friday 9am-1:30pm</span></em>
+</p>
+<p style="margin:0pt;line-height:10pt;font-size:9pt;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">${cfg.labels.email} </span></strong><strong><u><a href="mailto:${mail}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${mail}</a></u></strong>${extLine}${phoneLine}
+</p>
+${schoolDetailsBlock}
+<p style="margin:0pt;margin-top:${logoMarginTop};line-height:normal;font-size:11pt;background-color:#ffffff;">
+  <img src="${logoUrl}" width="${LOGO_TARGET_WIDTH}" height="${Math.round(LOGO_TARGET_WIDTH / aspect)}" alt="${altText}" style="display:block;border:0;">
 </p>
 <p style="margin:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">${cfg.labels.cricos}</span></strong>
@@ -766,7 +815,7 @@ ${signoffPara}
     }
 
     function render() {
-      document.getElementById("signature-container").innerHTML = buildSignature(currentMode);
+      document.getElementById("signature-container").innerHTML = buildSignature(currentMode, currentOrg);
 
       const subj = document.getElementById("mock-subject");
       const quoted = document.getElementById("quoted-reply");
@@ -802,12 +851,15 @@ ${signoffPara}
       logoUrlDebounce = setTimeout(() => refreshLogoAspect(url), 400);
     });
 
-    // Mode toggle
+    // Mode + Org toggles. Both groups share .mode-toggle styling but
+    // address different state (currentMode vs currentOrg). Scope the
+    // active-class swap to the clicked button's own parent group.
     document.querySelectorAll(".mode-toggle button").forEach(btn => {
       btn.addEventListener("click", () => {
-        document.querySelectorAll(".mode-toggle button").forEach(b => b.classList.remove("active"));
+        btn.parentElement.querySelectorAll("button").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
-        currentMode = btn.dataset.mode;
+        if (btn.dataset.mode) currentMode = btn.dataset.mode;
+        if (btn.dataset.org)  currentOrg  = btn.dataset.org;
         render();
       });
     });

@@ -31,12 +31,16 @@ const ORGS = {
   ncc: {
     displayName: "Nambour Christian College",
     logoUrl: "https://www.ncc.qld.edu.au/wp-content/uploads/NCC-Email_600x200.jpg",
-    aspect: 600 / 200
+    aspect: 600 / 200,
+    affiliationText: "",
+    showSchoolDetails: true
   },
   group: {
     displayName: "NCC Education Group",
     logoUrl: "https://www.ncc.qld.edu.au/wp-content/uploads/cc118d61-7fab-4089-93fd-6dc007d00674.jpg",
-    aspect: 600 / 200
+    aspect: 600 / 150,         // approx — update once exact image dims are known
+    affiliationText: "NCC Education Group",
+    showSchoolDetails: false
   }
 };
 
@@ -247,17 +251,18 @@ function buildSignature({ signoff, fullName, jobTitle, mail, ext, phone, whText,
 </p>`
     : "";
 
-  return `
-${signoffPara}
-<p style="margin:0pt;margin-bottom:12pt;line-height:13pt;background-color:#ffffff;">
-  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#ec3426;">${fullName}</span></strong>
-</p>
-${rolePara}
-${whPara}
-<p style="margin:0pt;line-height:10pt;font-size:9pt;background-color:#ffffff;">
-  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">E: </span></strong><strong><u><a href="mailto:${mail}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${mail}</a></u></strong>${extLine}${phoneLine}
-</p>
-<p style="margin:0pt;margin-top:12pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
+  // Affiliation line under role (e.g. "NCC Education Group"). Skipped when
+  // the org doesn't supply one. Kept in sync with taskpane.js.
+  const affiliationPara = org.affiliationText
+    ? `<p style="margin:0pt;line-height:12pt;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#005953;">${org.affiliationText}</span></strong>
+</p>`
+    : "";
+
+  // School details block — shown only when the org needs textual contact
+  // info (i.e. the logo doesn't already carry it).
+  const schoolDetailsBlock = org.showSchoolDetails
+    ? `<p style="margin:0pt;margin-top:12pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">${org.displayName}</span></strong>
 </p>
 <p style="margin:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
@@ -269,8 +274,26 @@ ${whPara}
   <a href="mailto:info@ncc.qld.edu.au" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">info@ncc.qld.edu.au</span></strong></a>
   <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#333333;"> | </span>
   <a href="https://www.ncc.qld.edu.au" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">www.ncc.qld.edu.au</span></strong></a>
+</p>`
+    : "";
+
+  // When school details aren't shown, push the logo down so it doesn't
+  // glue itself to the contact line above.
+  const logoMarginTop = org.showSchoolDetails ? "0pt" : "12pt";
+
+  return `
+${signoffPara}
+<p style="margin:0pt;margin-bottom:12pt;line-height:13pt;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#ec3426;">${fullName}</span></strong>
 </p>
-<p style="margin:0pt;line-height:normal;font-size:11pt;background-color:#ffffff;">
+${rolePara}
+${affiliationPara}
+${whPara}
+<p style="margin:0pt;line-height:10pt;font-size:9pt;background-color:#ffffff;">
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">E: </span></strong><strong><u><a href="mailto:${mail}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${mail}</a></u></strong>${extLine}${phoneLine}
+</p>
+${schoolDetailsBlock}
+<p style="margin:0pt;margin-top:${logoMarginTop};line-height:normal;font-size:11pt;background-color:#ffffff;">
   <img src="${org.logoUrl}" width="${LOGO_WIDTH}" height="${LOGO_HEIGHT}" alt="${org.displayName}" style="display:block;border:0;">
 </p>
 <p style="margin:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
