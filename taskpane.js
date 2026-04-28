@@ -579,7 +579,7 @@ function buildSignature() {
   const whText = compactWorkingHours(whSource);
   const whPara = whText
     ? `<p style="margin:0pt;line-height:10pt;background-color:#ffffff;">
-  <em><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#005953;">${whText}</span></em>
+  <strong><em><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#005953;">Working:</span></em></strong><em><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#000000;"> ${whText}</span></em>
 </p>`
     : "";
 
@@ -587,7 +587,7 @@ function buildSignature() {
   // entirely so we don't render a lone comma above the name.
   const signoffPara = signoff
     ? `<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
-  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;">${signoff},</span></strong>
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#000000;">${signoff},</span></strong>
 </p>`
     : "";
 
