@@ -82,9 +82,44 @@ async function onNewMessageComposeHandler(event) {
     catch (e) { wh = null; }
     const whText = compactWorkingHours(wh);
 
-    // Organisation: defaults to "ncc" if nothing saved or saved key isn't known.
+    // Variant cache: taskpane.js fetches variants.json on launch and
+    // mirrors entries into RoamingSettings under "variantsCache". Merge
+    // them into ORGS here so a saved variant org key resolves correctly.
+    try {
+      const cached = settings.get("variantsCache");
+      const list = cached ? JSON.parse(cached) : [];
+      if (Array.isArray(list)) {
+        list.forEach(v => {
+          if (!v || !v.key || !v.logoUrl) return;
+          const baseKey = v.baseOrg || "ncc";
+          const base = ORGS[baseKey] || ORGS.ncc;
+          ORGS[v.key] = {
+            displayName: v.displayName || base.displayName,
+            logoUrl: v.logoUrl,
+            aspect: base.aspect,
+            affiliationText: base.affiliationText,
+            showSchoolDetails: base.showSchoolDetails
+          };
+        });
+      }
+    } catch (e) { /* no cache yet — staff hasn't opened taskpane */ }
+
+    // Organisation: defaults to "ncc" if nothing saved or saved key isn't
+    // known. This is the contract for never-opened-taskpane installs:
+    // staff who only have the add-in pushed by Daniel still get the
+    // Nambour Christian College theme on their first auto-applied
+    // signature — no opt-in required.
     const savedOrg = settings.get("org");
     const orgKey   = (savedOrg && ORGS[savedOrg]) ? savedOrg : "ncc";
+
+    // Pull live aspect ratio cached by the taskpane on its last image load,
+    // so the signature image renders proportionally even if the logo is
+    // ever swapped for a different shape. Falls back to the hardcoded
+    // default in ORGS if no cache exists yet.
+    const cachedAspect = settings.get("logoAspect_" + orgKey);
+    if (typeof cachedAspect === "number" && cachedAspect > 0) {
+      ORGS[orgKey].aspect = cachedAspect;
+    }
 
     const sig = buildSignature({ signoff, fullName, jobTitle, mail, ext, phone, whText, orgKey });
 
@@ -237,8 +272,15 @@ function buildSignature({ signoff, fullName, jobTitle, mail, ext, phone, whText,
 
   // Working hours line: italic, smaller than role, NCC green. Sits under
   // role and above contact details. Skipped when blank.
+  // In themes that drop the school-details block, the contact info
+  // becomes its own block — give it a 12pt gap from the role/affiliation
+  // block above. Same logic as taskpane.js.
+  const contactBlockGap = !org.showSchoolDetails ? "margin-top:12pt;" : "";
+  const whParaTop  = whText ? contactBlockGap : "";
+  const contactTop = whText ? "" : contactBlockGap;
+
   const whPara = whText
-    ? `<p style="margin:0pt;line-height:10pt;background-color:#ffffff;">
+    ? `<p style="margin:0pt;${whParaTop}line-height:10pt;background-color:#ffffff;">
   <strong><em><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#005953;">Working:</span></em></strong><em><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#000000;"> ${whText}</span></em>
 </p>`
     : "";
@@ -289,7 +331,7 @@ ${signoffPara}
 ${rolePara}
 ${affiliationPara}
 ${whPara}
-<p style="margin:0pt;line-height:10pt;font-size:9pt;background-color:#ffffff;">
+<p style="margin:0pt;${contactTop}line-height:10pt;font-size:9pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">E: </span></strong><strong><u><a href="mailto:${mail}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${mail}</a></u></strong>${extLine}${phoneLine}
 </p>
 ${schoolDetailsBlock}

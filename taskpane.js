@@ -54,23 +54,105 @@ const AUTHORITY  = "https://login.microsoftonline.com/nambourcc.onmicrosoft.com"
 let userProfile = { displayName: "", jobTitle: "", mail: "" };
 
 /* ── Detect aspect ratios for both org logos ────────────────────────── */
-(function detectLogoAspects() {
-  Object.keys(ORGS).forEach(key => {
-    try {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        if (img.naturalWidth && img.naturalHeight) {
-          ORGS[key].aspect = img.naturalWidth / img.naturalHeight;
+// Image aspect ratios are detected from the actual served images so the
+// signature renders proportionally regardless of which logo is in use.
+// Detected values are cached to RoamingSettings so launchevent.js (which
+// runs in a headless context with no DOM/Image API to use) can read the
+// real ratio on every compose. crossOrigin is intentionally NOT set —
+// the WP server may not send CORS headers, and we don't need pixel
+// access, only naturalWidth/naturalHeight which are always readable.
+function detectAndCacheAspect(key) {
+  try {
+    const img = new Image();
+    img.onload = () => {
+      if (!img.naturalWidth || !img.naturalHeight) return;
+      const aspect = img.naturalWidth / img.naturalHeight;
+      ORGS[key].aspect = aspect;
+      try {
+        if (Office && Office.context && Office.context.roamingSettings) {
+          Office.context.roamingSettings.set("logoAspect_" + key, aspect);
+          Office.context.roamingSettings.saveAsync(() => { /* fire & forget */ });
         }
+      } catch (e) { /* roaming settings not ready yet — Office.onReady will retry on next save */ }
+    };
+    img.src = ORGS[key].logoUrl;
+  } catch (e) { /* fall back to default aspect */ }
+}
+
+// Read any cached aspects synchronously at boot (faster than waiting for
+// Image load) — only safe after Office.onReady, so guarded.
+function loadCachedAspects() {
+  try {
+    Object.keys(ORGS).forEach(key => {
+      const cached = Office.context.roamingSettings.get("logoAspect_" + key);
+      if (typeof cached === "number" && cached > 0) ORGS[key].aspect = cached;
+    });
+  } catch (e) { /* settings not ready */ }
+}
+
+// Kick off live detection for both orgs immediately.
+Object.keys(ORGS).forEach(detectAndCacheAspect);
+
+/* ── Load admin-managed variants ─────────────────────────────────────
+   Variants are event-themed signatures (e.g. school musicals) that admin
+   maintains via admin.html. They get exported to variants.json and
+   committed to the GitHub Pages repo. This taskpane fetches that JSON
+   on launch, merges entries into ORGS so they show up in the dropdown,
+   and caches them in RoamingSettings so launchevent.js can read them
+   on every compose without paying a fetch cost. */
+async function loadVariants() {
+  try {
+    const res = await fetch("variants.json", { cache: "no-cache" });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : (data && Array.isArray(data.variants) ? data.variants : []);
+    list.forEach(v => {
+      if (!v || !v.key || !v.logoUrl) return;
+      const baseKey = v.baseOrg || "ncc";
+      const base = ORGS[baseKey] || ORGS.ncc;
+      ORGS[v.key] = {
+        displayName: v.displayName || base.displayName,
+        logoUrl: v.logoUrl,
+        aspect: base.aspect,
+        affiliationText: base.affiliationText,
+        showSchoolDetails: base.showSchoolDetails
       };
-      img.src = ORGS[key].logoUrl;
-    } catch (e) { /* fall back to default */ }
+      // Detect aspect for the variant's logo too.
+      detectAndCacheAspect(v.key);
+    });
+    // Cache merged variants to RoamingSettings for launchevent.js.
+    try {
+      Office.context.roamingSettings.set("variantsCache", JSON.stringify(list));
+      Office.context.roamingSettings.saveAsync(() => {});
+    } catch (e) { /* settings not ready */ }
+    return list;
+  } catch (e) { return []; }
+}
+
+function repopulateOrgSelect() {
+  const sel = document.getElementById("org-select");
+  if (!sel) return;
+  const previousValue = sel.value;
+  // Wipe non-base options (everything beyond the first two: ncc, group).
+  Array.from(sel.options).forEach(opt => {
+    if (opt.value !== "ncc" && opt.value !== "group") opt.remove();
   });
-})();
+  Object.keys(ORGS).forEach(key => {
+    if (key === "ncc" || key === "group") return;
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = ORGS[key].displayName;
+    sel.appendChild(opt);
+  });
+  // Restore previous selection if still valid.
+  if (ORGS[previousValue]) sel.value = previousValue;
+}
 
 /* ── Office init ────────────────────────────────────────────────────── */
 Office.onReady(async () => {
+  loadCachedAspects();
+  await loadVariants();          // merge admin-published variants into ORGS
+  repopulateOrgSelect();         // make them available in the dropdown
   await loadProfile();
   loadPreferences();
   wireEvents();
@@ -204,6 +286,7 @@ function loadPreferences() {
   if (orgSelect) {
     orgSelect.value = (savedOrg && ORGS[savedOrg]) ? savedOrg : "ncc";
   }
+  refreshOrgDisclaimer();
 
   document.getElementById("title-select").value = settings.get("title") || "";
 
@@ -441,8 +524,21 @@ function applySignoffSelection(prefix, value) {
   }
 }
 
+/* ── Org-disclaimer visibility ──────────────────────────────────────── */
+// Only the NCC Education Group signature requires Director-of-Marketing
+// sign-off. Other orgs hide the warning entirely.
+function refreshOrgDisclaimer() {
+  const sel = document.getElementById("org-select");
+  const banner = document.getElementById("org-group-disclaimer");
+  if (!sel || !banner) return;
+  banner.style.display = (sel.value === "group") ? "block" : "none";
+}
+
 /* ── Wire events ────────────────────────────────────────────────────── */
 function wireEvents() {
+  const orgSelect = document.getElementById("org-select");
+  if (orgSelect) orgSelect.addEventListener("change", refreshOrgDisclaimer);
+
   ["newSignoff", "replySignoff"].forEach(prefix => {
     const sel = document.getElementById(prefix + "-select");
     sel.addEventListener("change", () => {
@@ -616,8 +712,17 @@ function buildSignature() {
     catch (e) { whSource = null; }
   }
   const whText = compactWorkingHours(whSource);
+
+  // In themes that drop the school-details block, the contact info
+  // becomes its own visual block — give it a 12pt gap from the role/
+  // affiliation block above. Falls on whPara if shown, else on the
+  // contact line below.
+  const contactBlockGap = !org.showSchoolDetails ? "margin-top:12pt;" : "";
+  const whParaTop  = whText ? contactBlockGap : "";
+  const contactTop = whText ? "" : contactBlockGap;
+
   const whPara = whText
-    ? `<p style="margin:0pt;line-height:10pt;background-color:#ffffff;">
+    ? `<p style="margin:0pt;${whParaTop}line-height:10pt;background-color:#ffffff;">
   <strong><em><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#005953;">Working:</span></em></strong><em><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#000000;"> ${whText}</span></em>
 </p>`
     : "";
@@ -669,7 +774,7 @@ ${signoffPara}
 ${rolePara}
 ${affiliationPara}
 ${whPara}
-<p style="margin:0pt;line-height:10pt;font-size:9pt;background-color:#ffffff;">
+<p style="margin:0pt;${contactTop}line-height:10pt;font-size:9pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">E: </span></strong><strong><u><a href="mailto:${mail}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${mail}</a></u></strong>${extLine}${phoneLine}
 </p>
 ${schoolDetailsBlock}

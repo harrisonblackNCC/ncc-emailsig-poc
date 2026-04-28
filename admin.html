@@ -354,6 +354,50 @@
     }
     .toggle input:checked + .slider { background: #005953; }
     .toggle input:checked + .slider::before { transform: translateX(16px); }
+
+    /* Signature variants */
+    .variant-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 10px;
+      background: #fafafa;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+    .variant-row input {
+      font-size: 11.5px;
+      padding: 6px 8px;
+    }
+    .variant-row .variant-meta {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .variant-row .variant-meta input {
+      flex: 1;
+    }
+    .variant-row .variant-delete {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 4px;
+      background: #f0f0f0;
+      color: #888;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+    }
+    .variant-row .variant-delete:hover { background: #ec3426; color: #fff; }
+    .variant-row .variant-empty {
+      color: #aaa;
+      font-size: 11px;
+      font-style: italic;
+      padding: 8px 0;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -532,6 +576,19 @@ Rev</textarea>
       </div>
 
       <div class="section">
+        <div class="section-label">Signature Variants</div>
+        <div class="hint">Event-themed signatures (school musicals, sports days, open days). Each variant inherits Nambour Christian College's contact details — only the logo and display name change. Staff opt in via their taskpane.</div>
+
+        <div id="variants-list" style="margin-top: 10px;"></div>
+
+        <div class="btn-row" style="margin-top: 8px;">
+          <button class="btn btn-copy" id="btn-add-variant">+ Duplicate Nambour Christian College</button>
+        </div>
+
+        <div class="hint" style="margin-top: 14px;">To push variants live: include them in the exported config JSON below as <code>variants.json</code> at the GitHub Pages root. Staff taskpanes auto-fetch this on launch.</div>
+      </div>
+
+      <div class="section">
         <div class="section-label">Save Changes</div>
         <div class="btn-row">
           <button class="btn btn-copy" id="btn-copy">Copy config JSON</button>
@@ -631,6 +688,138 @@ Rev</textarea>
       }
     };
 
+    /* ── Signature variants (event-themed signatures) ─────────────────────
+       Stored in localStorage so they survive admin reloads. Each variant
+       inherits Nambour Christian College's full layout — only logoUrl +
+       displayName are overridden. The shape matches what taskpane.js
+       expects via variants.json so the same exported JSON drives both
+       admin preview and live staff taskpanes. */
+    const VARIANTS_KEY = "ncc-sig-variants-v1";
+    let variants = [];
+
+    function loadVariants() {
+      try {
+        const raw = localStorage.getItem(VARIANTS_KEY);
+        variants = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(variants)) variants = [];
+      } catch (e) { variants = []; }
+    }
+
+    function saveVariants() {
+      try { localStorage.setItem(VARIANTS_KEY, JSON.stringify(variants)); }
+      catch (e) { /* full storage etc. — best-effort */ }
+    }
+
+    function addVariant() {
+      const key = "v_" + Date.now().toString(36);
+      variants.push({
+        key,
+        displayName: "Nambour Christian College — New Event",
+        logoUrl: document.getElementById("cfg-logo-url").value.trim()
+                 || "https://www.ncc.qld.edu.au/wp-content/uploads/NCC-Email_600x200.jpg",
+        baseOrg: "ncc"
+      });
+      saveVariants();
+      renderVariants();
+      rebuildOrgToggle();
+    }
+
+    function deleteVariant(key) {
+      variants = variants.filter(v => v.key !== key);
+      saveVariants();
+      renderVariants();
+      // If the deleted variant was being previewed, snap back to ncc.
+      if (currentOrg === key) {
+        currentOrg = "ncc";
+        const nccBtn = document.getElementById("org-ncc");
+        if (nccBtn) {
+          document.querySelectorAll('[data-org]').forEach(b => b.classList.remove("active"));
+          nccBtn.classList.add("active");
+        }
+      }
+      rebuildOrgToggle();
+      render();
+    }
+
+    function renderVariants() {
+      const list = document.getElementById("variants-list");
+      if (!list) return;
+      if (!variants.length) {
+        list.innerHTML = `<div class="variant-empty">No variants yet. Click below to duplicate the Nambour Christian College theme for an event.</div>`;
+        return;
+      }
+      list.innerHTML = variants.map(v => `
+        <div class="variant-row" data-key="${v.key}">
+          <div class="variant-meta">
+            <input type="text" class="variant-name" placeholder="Variant name" value="${escapeAttr(v.displayName)}" />
+            <button type="button" class="variant-delete" title="Delete variant">×</button>
+          </div>
+          <input type="text" class="variant-logo" placeholder="https://..." value="${escapeAttr(v.logoUrl)}" />
+        </div>
+      `).join("");
+
+      list.querySelectorAll(".variant-row").forEach(row => {
+        const key = row.dataset.key;
+        row.querySelector(".variant-name").addEventListener("input", (e) => {
+          const v = variants.find(x => x.key === key);
+          if (v) { v.displayName = e.target.value; saveVariants(); rebuildOrgToggleLabels(); render(); }
+        });
+        row.querySelector(".variant-logo").addEventListener("input", (e) => {
+          const v = variants.find(x => x.key === key);
+          if (v) { v.logoUrl = e.target.value; saveVariants(); render(); }
+        });
+        row.querySelector(".variant-delete").addEventListener("click", () => deleteVariant(key));
+      });
+    }
+
+    function escapeAttr(s) {
+      return String(s || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    }
+
+    /* Rebuild the preview-pane org toggle so it includes a button per variant. */
+    function rebuildOrgToggle() {
+      const container = document.querySelector('.mode-toggle:has([data-org])')
+                     || document.querySelectorAll('.mode-toggle')[1]; // fallback: 2nd mode-toggle group
+      if (!container) return;
+      // Remove any prior variant buttons but keep the two base ones.
+      container.querySelectorAll('[data-variant-key]').forEach(b => b.remove());
+      variants.forEach(v => {
+        const btn = document.createElement("button");
+        btn.dataset.org = v.key;
+        btn.dataset.variantKey = v.key;
+        btn.textContent = v.displayName;
+        btn.addEventListener("click", () => {
+          container.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          currentOrg = v.key;
+          render();
+        });
+        container.appendChild(btn);
+      });
+    }
+
+    function rebuildOrgToggleLabels() {
+      variants.forEach(v => {
+        const btn = document.querySelector(`[data-variant-key="${v.key}"]`);
+        if (btn) btn.textContent = v.displayName;
+      });
+    }
+
+    /* Treat a variant key as a virtual org for buildSignature lookups. */
+    function resolveOrgPreview(orgKey) {
+      if (ORGS_PREVIEW[orgKey]) return ORGS_PREVIEW[orgKey];
+      const v = variants.find(x => x.key === orgKey);
+      if (!v) return ORGS_PREVIEW.ncc;
+      // Variants inherit ncc layout — only logo + display name change.
+      return {
+        affiliationText: "",
+        showSchoolDetails: true,
+        logoOverride: v.logoUrl,
+        aspectOverride: null,    // detect on demand
+        displayNameOverride: null  // keep the cfg.collegeName in the schoolDetails block
+      };
+    }
+
     // Signature image sizing — width is fixed, height is derived from the
     // actual logo's aspect ratio so any future image just works.
     const LOGO_TARGET_WIDTH = 430;
@@ -641,8 +830,9 @@ Rev</textarea>
       return new Promise(resolve => {
         if (!url) return resolve(null);
         const img = new Image();
-        // crossOrigin helps when loading from another domain; falls back silently if blocked
-        img.crossOrigin = "anonymous";
+        // No crossOrigin — naturalWidth/Height are readable without CORS,
+        // and setting "anonymous" fails the load entirely if the server
+        // (e.g. NCC's WordPress) doesn't send CORS headers.
         img.onload  = () => resolve(img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : null);
         img.onerror = () => resolve(null);
         img.src = url;
@@ -656,6 +846,18 @@ Rev</textarea>
       if (aspect && aspect > 0) {
         logoAspect = aspect;
         render();
+      }
+    }
+
+    // Independent aspect ratio for the group org's logo (different image,
+    // different shape). Detected once at startup + on demand. Renders trigger
+    // a re-render so the preview matches the real served image proportions.
+    let groupLogoAspect = ORGS_PREVIEW.group.aspectOverride || 4;
+    async function refreshGroupLogoAspect() {
+      const aspect = await loadImageAspect(ORGS_PREVIEW.group.logoOverride);
+      if (aspect && aspect > 0) {
+        groupLogoAspect = aspect;
+        if (currentOrg === "group") render();
       }
     }
 
@@ -693,7 +895,16 @@ Rev</textarea>
           phone:         checked("perm-phone"),
           signoffNew:    checked("perm-signoff-new"),
           signoffReply:  checked("perm-signoff-reply")
-        }
+        },
+        // Event-themed signature variants. Drop this list (or the whole
+        // object) into a variants.json at the GitHub Pages root and staff
+        // taskpanes will pick them up on next launch.
+        variants: variants.map(v => ({
+          key: v.key,
+          displayName: v.displayName,
+          logoUrl: v.logoUrl,
+          baseOrg: v.baseOrg || "ncc"
+        }))
       };
     }
 
@@ -735,7 +946,7 @@ Rev</textarea>
 
     function buildSignature(mode, orgKey) {
       const cfg = getConfig({ forExport: false });
-      const org = ORGS_PREVIEW[orgKey] || ORGS_PREVIEW.ncc;
+      const org = resolveOrgPreview(orgKey);
       const { displayName, jobTitle, mail } = userProfile;
       const signoff = mode === "reply"
         ? (cfg.signoffs[Math.min(3, cfg.signoffs.length - 1)] || "Thanks")  // 4th = "Thanks" in default list
@@ -749,7 +960,9 @@ Rev</textarea>
       // still drive the preview; group hard-overrides the logo + drops
       // the school-details block.
       const logoUrl    = org.logoOverride    || cfg.logoUrl;
-      const aspect     = org.aspectOverride  || logoAspect;
+      // For ncc, use the live-detected logoAspect (driven by the URL field
+      // in the form). For group, use the auto-detected groupLogoAspect.
+      const aspect     = (orgKey === "group") ? groupLogoAspect : logoAspect;
       const altText    = org.displayNameOverride || cfg.collegeName;
 
       const extLine = ` <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">${cfg.labels.ext} </span></strong><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;">${sampleExt}</span></strong>`;
@@ -787,6 +1000,10 @@ Rev</textarea>
         : "";
 
       const logoMarginTop = org.showSchoolDetails ? "0pt" : "12pt";
+      // 12pt gap before the contact-info block when school details are dropped
+      // (admin preview always shows the sample working-hours line, so the gap
+      // lands on it rather than on the contact line).
+      const contactBlockGap = !org.showSchoolDetails ? "margin-top:12pt;" : "";
 
       return `
 ${signoffPara}
@@ -797,7 +1014,7 @@ ${signoffPara}
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#005953;">${jobTitle}</span></strong>
 </p>
 ${affiliationPara}
-<p style="margin:0pt;line-height:10pt;background-color:#ffffff;">
+<p style="margin:0pt;${contactBlockGap}line-height:10pt;background-color:#ffffff;">
   <strong><em><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#005953;">Working:</span></em></strong><em><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#000000;"> Tuesday-Thursday 9am-2pm, Friday 9am-1:30pm</span></em>
 </p>
 <p style="margin:0pt;line-height:10pt;font-size:9pt;background-color:#ffffff;">
@@ -986,12 +1203,20 @@ ${schoolDetailsBlock}
       showStatus("\u2713 Image downloaded — upload it to WP");
     });
 
+    // Variants — load saved + wire add button + paint into preview toggle
+    loadVariants();
+    renderVariants();
+    rebuildOrgToggle();
+    document.getElementById("btn-add-variant").addEventListener("click", addVariant);
+
     // First render
     render();
 
-    // Kick off an aspect-ratio read for the default WP logo URL so the
-    // signature preview matches the real image dimensions, not the default.
+    // Kick off aspect-ratio reads for both the configurable WP logo URL
+    // (drives the ncc preview) and the fixed group composite logo. Each
+    // updates its own aspect variable + triggers a re-render when ready.
     refreshLogoAspect(document.getElementById("cfg-logo-url").value.trim());
+    refreshGroupLogoAspect();
   </script>
 </body>
 </html>
