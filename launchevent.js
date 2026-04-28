@@ -21,10 +21,24 @@
  * taskpane.js so output is identical whether auto-inserted or manual.
  */
 
-const LOGO_URL      = "https://www.ncc.qld.edu.au/wp-content/uploads/NCC-Email_600x200.jpg";
 const LOGO_WIDTH    = 430;
-const LOGO_HEIGHT   = 143; // 430 / (600/200) rounded
 const SSO_TIMEOUT_MS = 3000; // give up on SSO after 3s, fall back silently
+
+// Org config — must match ORGS in taskpane.js. We can't auto-detect aspect
+// here (no DOM in headless context), so the height is computed from a
+// stored aspect ratio per org. Update aspect when the asset changes.
+const ORGS = {
+  ncc: {
+    displayName: "Nambour Christian College",
+    logoUrl: "https://www.ncc.qld.edu.au/wp-content/uploads/NCC-Email_600x200.jpg",
+    aspect: 600 / 200
+  },
+  group: {
+    displayName: "NCC Education Group",
+    logoUrl: "https://www.ncc.qld.edu.au/wp-content/uploads/cc118d61-7fab-4089-93fd-6dc007d00674.jpg",
+    aspect: 600 / 200
+  }
+};
 
 /* Register the handler so the manifest's FunctionName resolves. */
 Office.onReady(() => {
@@ -64,7 +78,11 @@ async function onNewMessageComposeHandler(event) {
     catch (e) { wh = null; }
     const whText = compactWorkingHours(wh);
 
-    const sig = buildSignature({ signoff, fullName, jobTitle, mail, ext, phone, whText });
+    // Organisation: defaults to "ncc" if nothing saved or saved key isn't known.
+    const savedOrg = settings.get("org");
+    const orgKey   = (savedOrg && ORGS[savedOrg]) ? savedOrg : "ncc";
+
+    const sig = buildSignature({ signoff, fullName, jobTitle, mail, ext, phone, whText, orgKey });
 
     item.body.setSignatureAsync(
       sig,
@@ -190,7 +208,9 @@ function compactWorkingHours(wh) {
 }
 
 /* ── Signature HTML (kept identical to taskpane.js buildSignature) ──── */
-function buildSignature({ signoff, fullName, jobTitle, mail, ext, phone, whText }) {
+function buildSignature({ signoff, fullName, jobTitle, mail, ext, phone, whText, orgKey }) {
+  const org = ORGS[orgKey] || ORGS.ncc;
+  const LOGO_HEIGHT = Math.round(LOGO_WIDTH / org.aspect);
   const extLine = ext
     ? ` <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">| Ext: </span></strong><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;">${ext}</span></strong>`
     : "";
@@ -238,7 +258,7 @@ ${whPara}
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">E: </span></strong><strong><u><a href="mailto:${mail}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${mail}</a></u></strong>${extLine}${phoneLine}
 </p>
 <p style="margin:0pt;margin-top:12pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
-  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">Nambour Christian College</span></strong>
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">${org.displayName}</span></strong>
 </p>
 <p style="margin:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
   <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#333333;">2 McKenzie Road, Woombye QLD 4559 | PO Box 500, Nambour QLD 4560</span>
@@ -251,7 +271,7 @@ ${whPara}
   <a href="https://www.ncc.qld.edu.au" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">www.ncc.qld.edu.au</span></strong></a>
 </p>
 <p style="margin:0pt;line-height:normal;font-size:11pt;background-color:#ffffff;">
-  <img src="${LOGO_URL}" width="${LOGO_WIDTH}" height="${LOGO_HEIGHT}" alt="Nambour Christian College" style="display:block;border:0;">
+  <img src="${org.logoUrl}" width="${LOGO_WIDTH}" height="${LOGO_HEIGHT}" alt="${org.displayName}" style="display:block;border:0;">
 </p>
 <p style="margin:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">CRICOS:</span></strong>

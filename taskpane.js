@@ -22,9 +22,24 @@
  *   for Windows does NOT support NAA, so it falls back to mailbox-only).
  */
 
-const LOGO_URL  = "https://www.ncc.qld.edu.au/wp-content/uploads/NCC-Email_600x200.jpg";
 const LOGO_TARGET_WIDTH = 430;
 const SSO_TIMEOUT_MS = 6000;   // give up on the whole NAA + Graph chain after 6s
+
+// Organisations the signature can render as. Default = ncc; staff can
+// switch via the Organisation dropdown at the top of the taskpane and the
+// choice persists per-mailbox via RoamingSettings ("org" key).
+const ORGS = {
+  ncc: {
+    displayName: "Nambour Christian College",
+    logoUrl: "https://www.ncc.qld.edu.au/wp-content/uploads/NCC-Email_600x200.jpg",
+    aspect: 600 / 200
+  },
+  group: {
+    displayName: "NCC Education Group",
+    logoUrl: "https://www.ncc.qld.edu.au/wp-content/uploads/cc118d61-7fab-4089-93fd-6dc007d00674.jpg",
+    aspect: 600 / 200   // gets overwritten by detectLogoAspects() once image loads
+  }
+};
 
 // Entra app registration for the add-in's API.
 const CLIENT_ID  = "55e5528d-7efd-4bd5-a437-0d31c68d3542";
@@ -33,20 +48,21 @@ const CLIENT_ID  = "55e5528d-7efd-4bd5-a437-0d31c68d3542";
 const AUTHORITY  = "https://login.microsoftonline.com/nambourcc.onmicrosoft.com";
 
 let userProfile = { displayName: "", jobTitle: "", mail: "" };
-let logoAspect  = 600 / 200;
 
-/* ── Detect logo aspect ratio for the signature image ───────────────── */
-(function detectLogoAspect() {
-  try {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      if (img.naturalWidth && img.naturalHeight) {
-        logoAspect = img.naturalWidth / img.naturalHeight;
-      }
-    };
-    img.src = LOGO_URL;
-  } catch (e) { /* fall back to default */ }
+/* ── Detect aspect ratios for both org logos ────────────────────────── */
+(function detectLogoAspects() {
+  Object.keys(ORGS).forEach(key => {
+    try {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        if (img.naturalWidth && img.naturalHeight) {
+          ORGS[key].aspect = img.naturalWidth / img.naturalHeight;
+        }
+      };
+      img.src = ORGS[key].logoUrl;
+    } catch (e) { /* fall back to default */ }
+  });
 })();
 
 /* ── Office init ────────────────────────────────────────────────────── */
@@ -176,6 +192,14 @@ function withTimeout(promise, ms) {
 /* ── Load saved preferences ─────────────────────────────────────────── */
 function loadPreferences() {
   const settings = Office.context.roamingSettings;
+
+  // Organisation: default to "ncc" if nothing saved, or if a saved value
+  // doesn't match a known org (defensive against legacy/misspelled keys).
+  const savedOrg = settings.get("org");
+  const orgSelect = document.getElementById("org-select");
+  if (orgSelect) {
+    orgSelect.value = (savedOrg && ORGS[savedOrg]) ? savedOrg : "ncc";
+  }
 
   document.getElementById("title-select").value = settings.get("title") || "";
 
@@ -464,6 +488,10 @@ function savePreferences() {
     const ext          = document.getElementById("ext-input").value.trim();
     const phone        = document.getElementById("phone-input").value.trim();
 
+    const orgSelect = document.getElementById("org-select");
+    const org = (orgSelect && ORGS[orgSelect.value]) ? orgSelect.value : "ncc";
+
+    settings.set("org",          org);
     settings.set("title",        title);
     settings.set("newSignoff",   newSignoff);
     settings.set("replySignoff", replySignoff);
@@ -548,6 +576,13 @@ function buildSignature() {
   const { displayName, mail } = userProfile;
   const fullName = title ? `${title} ${displayName}` : displayName;
 
+  // Pick the org for this signature. Selected value > saved setting > ncc.
+  const orgSelect = document.getElementById("org-select");
+  const orgKey    = (orgSelect && ORGS[orgSelect.value])
+                    ? orgSelect.value
+                    : (ORGS[settings.get("org")] ? settings.get("org") : "ncc");
+  const org = ORGS[orgKey];
+
   const extLine = ext
     ? ` <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">| Ext: </span></strong><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;">${ext}</span></strong>`
     : "";
@@ -602,7 +637,7 @@ ${whPara}
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">E: </span></strong><strong><u><a href="mailto:${mail}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${mail}</a></u></strong>${extLine}${phoneLine}
 </p>
 <p style="margin:0pt;margin-top:12pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
-  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">Nambour Christian College</span></strong>
+  <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">${org.displayName}</span></strong>
 </p>
 <p style="margin:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
   <span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#333333;">2 McKenzie Road, Woombye QLD 4559 | PO Box 500, Nambour QLD 4560</span>
@@ -615,7 +650,7 @@ ${whPara}
   <a href="https://www.ncc.qld.edu.au" style="text-decoration:underline;color:#ec3426;"><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:7pt;color:#ec3426;">www.ncc.qld.edu.au</span></strong></a>
 </p>
 <p style="margin:0pt;line-height:normal;font-size:11pt;background-color:#ffffff;">
-  <img src="${LOGO_URL}" width="${LOGO_TARGET_WIDTH}" height="${Math.round(LOGO_TARGET_WIDTH / logoAspect)}" alt="Nambour Christian College" style="display:block;border:0;">
+  <img src="${org.logoUrl}" width="${LOGO_TARGET_WIDTH}" height="${Math.round(LOGO_TARGET_WIDTH / org.aspect)}" alt="${org.displayName}" style="display:block;border:0;">
 </p>
 <p style="margin:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">CRICOS:</span></strong>
