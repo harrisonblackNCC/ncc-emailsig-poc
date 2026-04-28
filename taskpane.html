@@ -227,22 +227,74 @@
       cursor: pointer;
       user-select: none;
     }
-    .wh-day select.wh-time {
+    .wh-time-wrap {
+      position: relative;
       flex: 1;
       min-width: 0;
-      padding: 5px 6px;
+    }
+    .wh-time-btn {
+      width: 100%;
+      padding: 5px 22px 5px 8px;
       border: 1px solid #ddd;
       border-radius: 3px;
       font-family: inherit;
       font-size: 11.5px;
       color: #333;
       background: #fff;
+      text-align: left;
+      cursor: pointer;
+      position: relative;
     }
-    .wh-day select.wh-time:focus { border-color: #005953; outline: none; }
-    .wh-day select.wh-time:disabled {
+    .wh-time-btn::after {
+      content: "";
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      width: 0; height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 5px solid #888;
+      transform: translateY(-50%);
+    }
+    .wh-time-btn:focus { border-color: #005953; outline: none; }
+    .wh-time-btn:disabled {
       background: #f0f0f0;
       color: #aaa;
       cursor: not-allowed;
+    }
+    .wh-time-btn:disabled::after { border-top-color: #ccc; }
+    .wh-time-popup {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: 2px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+      max-height: 140px;       /* ~5 rows */
+      overflow-y: auto;
+      z-index: 100;
+    }
+    .wh-time-popup.open { display: block; }
+    .wh-time-popup button {
+      display: block;
+      width: 100%;
+      padding: 6px 8px;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 11.5px;
+      color: #333;
+      text-align: left;
+      cursor: pointer;
+    }
+    .wh-time-popup button:hover { background: #f1f7f5; }
+    .wh-time-popup button.active {
+      background: #005953;
+      color: #fff;
     }
     .wh-day .wh-dash {
       flex-shrink: 0;
@@ -355,37 +407,77 @@
         <div class="wh-day" data-day="mon">
           <input type="checkbox" id="wh-mon" />
           <label class="wh-label" for="wh-mon">Mon</label>
-          <select class="wh-time" id="wh-mon-start" data-default="08:00" disabled></select>
+          <div class="wh-time-wrap">
+            <input type="hidden" id="wh-mon-start" value="08:00" data-default="08:00" />
+            <button type="button" class="wh-time-btn" disabled>8am</button>
+            <div class="wh-time-popup"></div>
+          </div>
           <span class="wh-dash">&ndash;</span>
-          <select class="wh-time" id="wh-mon-end" data-default="16:00" disabled></select>
+          <div class="wh-time-wrap">
+            <input type="hidden" id="wh-mon-end" value="16:00" data-default="16:00" />
+            <button type="button" class="wh-time-btn" disabled>4pm</button>
+            <div class="wh-time-popup"></div>
+          </div>
         </div>
         <div class="wh-day" data-day="tue">
           <input type="checkbox" id="wh-tue" />
           <label class="wh-label" for="wh-tue">Tue</label>
-          <select class="wh-time" id="wh-tue-start" data-default="08:00" disabled></select>
+          <div class="wh-time-wrap">
+            <input type="hidden" id="wh-tue-start" value="08:00" data-default="08:00" />
+            <button type="button" class="wh-time-btn" disabled>8am</button>
+            <div class="wh-time-popup"></div>
+          </div>
           <span class="wh-dash">&ndash;</span>
-          <select class="wh-time" id="wh-tue-end" data-default="16:00" disabled></select>
+          <div class="wh-time-wrap">
+            <input type="hidden" id="wh-tue-end" value="16:00" data-default="16:00" />
+            <button type="button" class="wh-time-btn" disabled>4pm</button>
+            <div class="wh-time-popup"></div>
+          </div>
         </div>
         <div class="wh-day" data-day="wed">
           <input type="checkbox" id="wh-wed" />
           <label class="wh-label" for="wh-wed">Wed</label>
-          <select class="wh-time" id="wh-wed-start" data-default="08:00" disabled></select>
+          <div class="wh-time-wrap">
+            <input type="hidden" id="wh-wed-start" value="08:00" data-default="08:00" />
+            <button type="button" class="wh-time-btn" disabled>8am</button>
+            <div class="wh-time-popup"></div>
+          </div>
           <span class="wh-dash">&ndash;</span>
-          <select class="wh-time" id="wh-wed-end" data-default="16:00" disabled></select>
+          <div class="wh-time-wrap">
+            <input type="hidden" id="wh-wed-end" value="16:00" data-default="16:00" />
+            <button type="button" class="wh-time-btn" disabled>4pm</button>
+            <div class="wh-time-popup"></div>
+          </div>
         </div>
         <div class="wh-day" data-day="thu">
           <input type="checkbox" id="wh-thu" />
           <label class="wh-label" for="wh-thu">Thu</label>
-          <select class="wh-time" id="wh-thu-start" data-default="08:00" disabled></select>
+          <div class="wh-time-wrap">
+            <input type="hidden" id="wh-thu-start" value="08:00" data-default="08:00" />
+            <button type="button" class="wh-time-btn" disabled>8am</button>
+            <div class="wh-time-popup"></div>
+          </div>
           <span class="wh-dash">&ndash;</span>
-          <select class="wh-time" id="wh-thu-end" data-default="16:00" disabled></select>
+          <div class="wh-time-wrap">
+            <input type="hidden" id="wh-thu-end" value="16:00" data-default="16:00" />
+            <button type="button" class="wh-time-btn" disabled>4pm</button>
+            <div class="wh-time-popup"></div>
+          </div>
         </div>
         <div class="wh-day" data-day="fri">
           <input type="checkbox" id="wh-fri" />
           <label class="wh-label" for="wh-fri">Fri</label>
-          <select class="wh-time" id="wh-fri-start" data-default="08:00" disabled></select>
+          <div class="wh-time-wrap">
+            <input type="hidden" id="wh-fri-start" value="08:00" data-default="08:00" />
+            <button type="button" class="wh-time-btn" disabled>8am</button>
+            <div class="wh-time-popup"></div>
+          </div>
           <span class="wh-dash">&ndash;</span>
-          <select class="wh-time" id="wh-fri-end" data-default="16:00" disabled></select>
+          <div class="wh-time-wrap">
+            <input type="hidden" id="wh-fri-end" value="16:00" data-default="16:00" />
+            <button type="button" class="wh-time-btn" disabled>4pm</button>
+            <div class="wh-time-popup"></div>
+          </div>
         </div>
       </div>
     </div>

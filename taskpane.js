@@ -210,7 +210,7 @@ const WH_DEFAULT_END   = "16:00";
 function buildTimeOptionList() {
   const out = [];
   for (let h = 5; h <= 19; h++) {
-    for (let m = 0; m < 60; m += 30) {
+    for (let m = 0; m < 60; m += 15) {
       if (h === 19 && m > 0) break; // hard-stop at 19:00
       const value = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
       out.push({ value, label: formatWHTime(value) });
@@ -219,20 +219,86 @@ function buildTimeOptionList() {
   return out;
 }
 
-function populateTimeSelects() {
-  const opts = buildTimeOptionList();
-  const html = opts.map(o => `<option value="${o.value}">${o.label}</option>`).join("");
-  document.querySelectorAll("select.wh-time").forEach(sel => {
-    sel.innerHTML = html;
-    const def = sel.dataset.default || WH_DEFAULT_START;
-    sel.value = def;
+// Hidden input is the value source-of-truth. The visible button shows the
+// human-formatted label. setWHTimeValue keeps both in lockstep + marks the
+// active option in the popup.
+function setWHTimeValue(hiddenInput, value) {
+  if (!hiddenInput) return;
+  hiddenInput.value = value || "";
+  const wrap = hiddenInput.closest(".wh-time-wrap");
+  if (!wrap) return;
+  const btn = wrap.querySelector(".wh-time-btn");
+  if (btn) btn.textContent = value ? formatWHTime(value) : "—";
+  wrap.querySelectorAll(".wh-time-popup button").forEach(b => {
+    b.classList.toggle("active", b.dataset.val === value);
   });
 }
 
-// Saved value -> closest option in the dropdown. If saved value isn't a
-// valid option (e.g. legacy 17:00 from before the 7pm cap, or a 15-min
-// slot) we fall back to the supplied default. Selects can't display a
-// non-option anyway, so this keeps the UI honest.
+function setWHTimeDisabled(hiddenInput, disabled) {
+  if (!hiddenInput) return;
+  hiddenInput.disabled = disabled;
+  const wrap = hiddenInput.closest(".wh-time-wrap");
+  if (!wrap) return;
+  const btn = wrap.querySelector(".wh-time-btn");
+  if (btn) btn.disabled = disabled;
+  const popup = wrap.querySelector(".wh-time-popup");
+  if (popup && disabled) popup.classList.remove("open");
+}
+
+function populateTimeSelects() {
+  const opts = buildTimeOptionList();
+  const html = opts.map(o => `<button type="button" data-val="${o.value}">${o.label}</button>`).join("");
+  document.querySelectorAll(".wh-time-wrap").forEach(wrap => {
+    const popup = wrap.querySelector(".wh-time-popup");
+    const hidden = wrap.querySelector("input[type='hidden']");
+    if (!popup || !hidden) return;
+    popup.innerHTML = html;
+    // Clicking an option updates the hidden value + closes the popup.
+    popup.querySelectorAll("button").forEach(optBtn => {
+      optBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        setWHTimeValue(hidden, optBtn.dataset.val);
+        popup.classList.remove("open");
+      });
+    });
+    // Make sure the visible button reflects the current hidden value
+    // (defaults already set on the hidden input via the markup).
+    setWHTimeValue(hidden, hidden.value || hidden.dataset.default || WH_DEFAULT_START);
+  });
+  wireWHDropdownToggles();
+}
+
+// One delegated listener handles every time-button click + outside click.
+let _whDropdownsWired = false;
+function wireWHDropdownToggles() {
+  if (_whDropdownsWired) return;
+  _whDropdownsWired = true;
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".wh-time-btn");
+    if (btn && !btn.disabled) {
+      const wrap = btn.closest(".wh-time-wrap");
+      const popup = wrap && wrap.querySelector(".wh-time-popup");
+      if (!popup) return;
+      const wasOpen = popup.classList.contains("open");
+      // Close any other open popups first.
+      document.querySelectorAll(".wh-time-popup.open").forEach(p => p.classList.remove("open"));
+      if (!wasOpen) {
+        popup.classList.add("open");
+        // Scroll the active option into view so users land near their pick.
+        const active = popup.querySelector("button.active");
+        if (active) active.scrollIntoView({ block: "nearest" });
+      }
+      return;
+    }
+    // Click outside any popup closes them all.
+    if (!e.target.closest(".wh-time-popup")) {
+      document.querySelectorAll(".wh-time-popup.open").forEach(p => p.classList.remove("open"));
+    }
+  });
+}
+
+// Saved value -> closest valid option. Falls back to default if the saved
+// value isn't in our list (e.g. legacy entries from before the 5am-7pm cap).
 function pickValidTime(saved, fallback) {
   if (!saved || typeof saved !== "string") return fallback;
   const opts = buildTimeOptionList();
@@ -260,10 +326,10 @@ function loadWorkingHours() {
     const endEl   = document.getElementById("wh-" + d.key + "-end");
     if (!cb || !startEl || !endEl) return;
     cb.checked = !!dayPrefs.active;
-    startEl.value = pickValidTime(dayPrefs.start, WH_DEFAULT_START);
-    endEl.value   = pickValidTime(dayPrefs.end,   WH_DEFAULT_END);
-    startEl.disabled = !cb.checked;
-    endEl.disabled   = !cb.checked;
+    setWHTimeValue(startEl, pickValidTime(dayPrefs.start, WH_DEFAULT_START));
+    setWHTimeValue(endEl,   pickValidTime(dayPrefs.end,   WH_DEFAULT_END));
+    setWHTimeDisabled(startEl, !cb.checked);
+    setWHTimeDisabled(endEl,   !cb.checked);
   });
 }
 
@@ -366,15 +432,13 @@ function wireEvents() {
     });
   }
 
-  // Each day checkbox enables/disables its time inputs in lockstep.
+  // Each day checkbox enables/disables its time pickers in lockstep.
   WH_DAYS.forEach(d => {
     const cb = document.getElementById("wh-" + d.key);
     if (!cb) return;
     cb.addEventListener("change", () => {
-      const startEl = document.getElementById("wh-" + d.key + "-start");
-      const endEl   = document.getElementById("wh-" + d.key + "-end");
-      if (startEl) startEl.disabled = !cb.checked;
-      if (endEl)   endEl.disabled   = !cb.checked;
+      setWHTimeDisabled(document.getElementById("wh-" + d.key + "-start"), !cb.checked);
+      setWHTimeDisabled(document.getElementById("wh-" + d.key + "-end"),   !cb.checked);
     });
   });
 
