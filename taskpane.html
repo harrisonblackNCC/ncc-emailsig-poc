@@ -227,7 +227,7 @@
       cursor: pointer;
       user-select: none;
     }
-    .wh-day input[type="time"] {
+    .wh-day select.wh-time {
       flex: 1;
       min-width: 0;
       padding: 5px 6px;
@@ -238,8 +238,8 @@
       color: #333;
       background: #fff;
     }
-    .wh-day input[type="time"]:focus { border-color: #005953; outline: none; }
-    .wh-day input[type="time"]:disabled {
+    .wh-day select.wh-time:focus { border-color: #005953; outline: none; }
+    .wh-day select.wh-time:disabled {
       background: #f0f0f0;
       color: #aaa;
       cursor: not-allowed;
@@ -355,51 +355,37 @@
         <div class="wh-day" data-day="mon">
           <input type="checkbox" id="wh-mon" />
           <label class="wh-label" for="wh-mon">Mon</label>
-          <input type="time" id="wh-mon-start" value="09:00" disabled />
+          <select class="wh-time" id="wh-mon-start" data-default="08:00" disabled></select>
           <span class="wh-dash">&ndash;</span>
-          <input type="time" id="wh-mon-end" value="17:00" disabled />
+          <select class="wh-time" id="wh-mon-end" data-default="16:00" disabled></select>
         </div>
         <div class="wh-day" data-day="tue">
           <input type="checkbox" id="wh-tue" />
           <label class="wh-label" for="wh-tue">Tue</label>
-          <input type="time" id="wh-tue-start" value="09:00" disabled />
+          <select class="wh-time" id="wh-tue-start" data-default="08:00" disabled></select>
           <span class="wh-dash">&ndash;</span>
-          <input type="time" id="wh-tue-end" value="17:00" disabled />
+          <select class="wh-time" id="wh-tue-end" data-default="16:00" disabled></select>
         </div>
         <div class="wh-day" data-day="wed">
           <input type="checkbox" id="wh-wed" />
           <label class="wh-label" for="wh-wed">Wed</label>
-          <input type="time" id="wh-wed-start" value="09:00" disabled />
+          <select class="wh-time" id="wh-wed-start" data-default="08:00" disabled></select>
           <span class="wh-dash">&ndash;</span>
-          <input type="time" id="wh-wed-end" value="17:00" disabled />
+          <select class="wh-time" id="wh-wed-end" data-default="16:00" disabled></select>
         </div>
         <div class="wh-day" data-day="thu">
           <input type="checkbox" id="wh-thu" />
           <label class="wh-label" for="wh-thu">Thu</label>
-          <input type="time" id="wh-thu-start" value="09:00" disabled />
+          <select class="wh-time" id="wh-thu-start" data-default="08:00" disabled></select>
           <span class="wh-dash">&ndash;</span>
-          <input type="time" id="wh-thu-end" value="17:00" disabled />
+          <select class="wh-time" id="wh-thu-end" data-default="16:00" disabled></select>
         </div>
         <div class="wh-day" data-day="fri">
           <input type="checkbox" id="wh-fri" />
           <label class="wh-label" for="wh-fri">Fri</label>
-          <input type="time" id="wh-fri-start" value="09:00" disabled />
+          <select class="wh-time" id="wh-fri-start" data-default="08:00" disabled></select>
           <span class="wh-dash">&ndash;</span>
-          <input type="time" id="wh-fri-end" value="17:00" disabled />
-        </div>
-        <div class="wh-day" data-day="sat">
-          <input type="checkbox" id="wh-sat" />
-          <label class="wh-label" for="wh-sat">Sat</label>
-          <input type="time" id="wh-sat-start" value="09:00" disabled />
-          <span class="wh-dash">&ndash;</span>
-          <input type="time" id="wh-sat-end" value="17:00" disabled />
-        </div>
-        <div class="wh-day" data-day="sun">
-          <input type="checkbox" id="wh-sun" />
-          <label class="wh-label" for="wh-sun">Sun</label>
-          <input type="time" id="wh-sun-start" value="09:00" disabled />
-          <span class="wh-dash">&ndash;</span>
-          <input type="time" id="wh-sun-end" value="17:00" disabled />
+          <select class="wh-time" id="wh-fri-end" data-default="16:00" disabled></select>
         </div>
       </div>
     </div>

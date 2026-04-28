@@ -137,14 +137,14 @@ function isReplyContext(item) {
 }
 
 /* ── Working hours helpers (kept identical to taskpane.js) ──────────── */
+// NCC operates Mon-Fri only. Sat/Sun stay out of the loop so any legacy
+// saved weekend entries silently drop out of the rendered signature.
 const WH_DAYS_LE = [
   { key: "mon", label: "Monday" },
   { key: "tue", label: "Tuesday" },
   { key: "wed", label: "Wednesday" },
   { key: "thu", label: "Thursday" },
-  { key: "fri", label: "Friday" },
-  { key: "sat", label: "Saturday" },
-  { key: "sun", label: "Sunday" }
+  { key: "fri", label: "Friday" }
 ];
 
 function formatWHTime(t) {
@@ -203,8 +203,10 @@ function buildSignature({ signoff, fullName, jobTitle, mail, ext, phone, whText 
   // Role paragraph is conditional — empty string if jobTitle is blank so
   // we don't render an awkward empty line for users who've never opened
   // the taskpane AND have no jobTitle in Entra.
+  // Explicit line-height (vs. "normal") tightens the gap to working hours +
+  // contact line. Kept in sync with taskpane.js.
   const rolePara = jobTitle
-    ? `<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
+    ? `<p style="margin:0pt;line-height:12pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#005953;">${jobTitle}</span></strong>
 </p>`
     : "";
@@ -212,7 +214,7 @@ function buildSignature({ signoff, fullName, jobTitle, mail, ext, phone, whText 
   // Working hours line: italic, smaller than role, NCC green. Sits under
   // role and above contact details. Skipped when blank.
   const whPara = whText
-    ? `<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
+    ? `<p style="margin:0pt;line-height:10pt;background-color:#ffffff;">
   <em><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#005953;">${whText}</span></em>
 </p>`
     : "";
@@ -227,15 +229,15 @@ function buildSignature({ signoff, fullName, jobTitle, mail, ext, phone, whText 
 
   return `
 ${signoffPara}
-<p style="margin:0pt;margin-bottom:10pt;line-height:normal;background-color:#ffffff;">
+<p style="margin:0pt;margin-bottom:12pt;line-height:13pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#ec3426;">${fullName}</span></strong>
 </p>
 ${rolePara}
 ${whPara}
-<p style="margin:0pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
+<p style="margin:0pt;line-height:10pt;font-size:9pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">E: </span></strong><strong><u><a href="mailto:${mail}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${mail}</a></u></strong>${extLine}${phoneLine}
 </p>
-<p style="margin:0pt;margin-top:4pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
+<p style="margin:0pt;margin-top:12pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">Nambour Christian College</span></strong>
 </p>
 <p style="margin:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">

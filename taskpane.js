@@ -187,19 +187,57 @@ function loadPreferences() {
   document.getElementById("ext-input").value   = settings.get("ext")   || "";
   document.getElementById("phone-input").value = settings.get("phone") || "";
 
+  // Inject the 5am-7pm option list into every wh-time select before we
+  // try to apply saved values, otherwise the selects have nothing to pick.
+  populateTimeSelects();
   loadWorkingHours();
 }
 
 /* ── Working hours ──────────────────────────────────────────────────── */
+// NCC operates Mon-Fri only. Time options run 5am-7pm in 30-min steps
+// (29 options). Generated at runtime + injected into every wh-time
+// <select> so staff literally can't pick anything outside the window.
 const WH_DAYS = [
   { key: "mon", label: "Monday" },
   { key: "tue", label: "Tuesday" },
   { key: "wed", label: "Wednesday" },
   { key: "thu", label: "Thursday" },
-  { key: "fri", label: "Friday" },
-  { key: "sat", label: "Saturday" },
-  { key: "sun", label: "Sunday" }
+  { key: "fri", label: "Friday" }
 ];
+const WH_DEFAULT_START = "08:00";
+const WH_DEFAULT_END   = "16:00";
+
+function buildTimeOptionList() {
+  const out = [];
+  for (let h = 5; h <= 19; h++) {
+    for (let m = 0; m < 60; m += 30) {
+      if (h === 19 && m > 0) break; // hard-stop at 19:00
+      const value = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+      out.push({ value, label: formatWHTime(value) });
+    }
+  }
+  return out;
+}
+
+function populateTimeSelects() {
+  const opts = buildTimeOptionList();
+  const html = opts.map(o => `<option value="${o.value}">${o.label}</option>`).join("");
+  document.querySelectorAll("select.wh-time").forEach(sel => {
+    sel.innerHTML = html;
+    const def = sel.dataset.default || WH_DEFAULT_START;
+    sel.value = def;
+  });
+}
+
+// Saved value -> closest option in the dropdown. If saved value isn't a
+// valid option (e.g. legacy 17:00 from before the 7pm cap, or a 15-min
+// slot) we fall back to the supplied default. Selects can't display a
+// non-option anyway, so this keeps the UI honest.
+function pickValidTime(saved, fallback) {
+  if (!saved || typeof saved !== "string") return fallback;
+  const opts = buildTimeOptionList();
+  return opts.some(o => o.value === saved) ? saved : fallback;
+}
 
 function loadWorkingHours() {
   const settings = Office.context.roamingSettings;
@@ -222,8 +260,8 @@ function loadWorkingHours() {
     const endEl   = document.getElementById("wh-" + d.key + "-end");
     if (!cb || !startEl || !endEl) return;
     cb.checked = !!dayPrefs.active;
-    startEl.value = dayPrefs.start || "09:00";
-    endEl.value   = dayPrefs.end   || "17:00";
+    startEl.value = pickValidTime(dayPrefs.start, WH_DEFAULT_START);
+    endEl.value   = pickValidTime(dayPrefs.end,   WH_DEFAULT_END);
     startEl.disabled = !cb.checked;
     endEl.disabled   = !cb.checked;
   });
@@ -238,8 +276,8 @@ function collectWorkingHours() {
     const endEl   = document.getElementById("wh-" + d.key + "-end");
     out.days[d.key] = {
       active: !!(cb && cb.checked),
-      start:  (startEl && startEl.value) || "09:00",
-      end:    (endEl && endEl.value)     || "17:00"
+      start:  (startEl && startEl.value) || WH_DEFAULT_START,
+      end:    (endEl && endEl.value)     || WH_DEFAULT_END
     };
   });
   return out;
@@ -457,8 +495,10 @@ function buildSignature() {
 
   // Role paragraph is conditional — skip the line entirely if blank so we
   // don't render an awkward empty paragraph. Kept in sync with launchevent.js.
+  // Explicit line-height (vs. "normal") tightens the gap to working hours +
+  // contact line so the upper block matches the tight bottom block.
   const rolePara = jobTitle
-    ? `<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
+    ? `<p style="margin:0pt;line-height:12pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#005953;">${jobTitle}</span></strong>
 </p>`
     : "";
@@ -474,7 +514,7 @@ function buildSignature() {
   }
   const whText = compactWorkingHours(whSource);
   const whPara = whText
-    ? `<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
+    ? `<p style="margin:0pt;line-height:10pt;background-color:#ffffff;">
   <em><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#005953;">${whText}</span></em>
 </p>`
     : "";
@@ -489,15 +529,15 @@ function buildSignature() {
 
   return `
 ${signoffPara}
-<p style="margin:0pt;margin-bottom:10pt;line-height:normal;background-color:#ffffff;">
+<p style="margin:0pt;margin-bottom:12pt;line-height:13pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#ec3426;">${fullName}</span></strong>
 </p>
 ${rolePara}
 ${whPara}
-<p style="margin:0pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
+<p style="margin:0pt;line-height:10pt;font-size:9pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">E: </span></strong><strong><u><a href="mailto:${mail}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${mail}</a></u></strong>${extLine}${phoneLine}
 </p>
-<p style="margin:0pt;margin-top:4pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
+<p style="margin:0pt;margin-top:12pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">Nambour Christian College</span></strong>
 </p>
 <p style="margin:0pt;line-height:normal;font-size:7pt;background-color:#ffffff;">
