@@ -186,6 +186,112 @@ function loadPreferences() {
 
   document.getElementById("ext-input").value   = settings.get("ext")   || "";
   document.getElementById("phone-input").value = settings.get("phone") || "";
+
+  loadWorkingHours();
+}
+
+/* ── Working hours ──────────────────────────────────────────────────── */
+const WH_DAYS = [
+  { key: "mon", label: "Monday" },
+  { key: "tue", label: "Tuesday" },
+  { key: "wed", label: "Wednesday" },
+  { key: "thu", label: "Thursday" },
+  { key: "fri", label: "Friday" },
+  { key: "sat", label: "Saturday" },
+  { key: "sun", label: "Sunday" }
+];
+
+function loadWorkingHours() {
+  const settings = Office.context.roamingSettings;
+  let saved;
+  try { saved = JSON.parse(settings.get("workingHours") || "null"); }
+  catch (e) { saved = null; }
+
+  const showToggle = document.getElementById("wh-show");
+  const list = document.getElementById("wh-days-list");
+  if (!showToggle || !list) return;
+
+  const showOn = !!(saved && saved.show);
+  showToggle.checked = showOn;
+  list.style.display = showOn ? "block" : "none";
+
+  WH_DAYS.forEach(d => {
+    const dayPrefs = (saved && saved.days && saved.days[d.key]) || {};
+    const cb = document.getElementById("wh-" + d.key);
+    const startEl = document.getElementById("wh-" + d.key + "-start");
+    const endEl   = document.getElementById("wh-" + d.key + "-end");
+    if (!cb || !startEl || !endEl) return;
+    cb.checked = !!dayPrefs.active;
+    startEl.value = dayPrefs.start || "09:00";
+    endEl.value   = dayPrefs.end   || "17:00";
+    startEl.disabled = !cb.checked;
+    endEl.disabled   = !cb.checked;
+  });
+}
+
+function collectWorkingHours() {
+  const showToggle = document.getElementById("wh-show");
+  const out = { show: !!(showToggle && showToggle.checked), days: {} };
+  WH_DAYS.forEach(d => {
+    const cb = document.getElementById("wh-" + d.key);
+    const startEl = document.getElementById("wh-" + d.key + "-start");
+    const endEl   = document.getElementById("wh-" + d.key + "-end");
+    out.days[d.key] = {
+      active: !!(cb && cb.checked),
+      start:  (startEl && startEl.value) || "09:00",
+      end:    (endEl && endEl.value)     || "17:00"
+    };
+  });
+  return out;
+}
+
+/* Format "HH:MM" 24h string to friendly 12h form.
+   "09:00" -> "9am"   "13:30" -> "1:30pm"   "12:00" -> "12pm"   "00:00" -> "12am" */
+function formatWHTime(t) {
+  if (!t || typeof t !== "string" || !t.includes(":")) return t || "";
+  const [hStr, mStr] = t.split(":");
+  const h = parseInt(hStr, 10);
+  const m = parseInt(mStr, 10);
+  if (isNaN(h) || isNaN(m)) return t;
+  const period = h < 12 ? "am" : "pm";
+  const h12 = ((h + 11) % 12) + 1;
+  return m === 0 ? `${h12}${period}` : `${h12}:${String(m).padStart(2, "0")}${period}`;
+}
+
+/* Compact e.g. Tue 9-14 / Wed 9-14 / Thu 9-14 / Fri 9-13:30
+   into "Tuesday-Thursday 9am-2pm, Friday 9am-1:30pm".
+   Only consecutive days with identical start AND end times group. */
+function compactWorkingHours(wh) {
+  if (!wh || !wh.show || !wh.days) return "";
+  const ordered = WH_DAYS.map(d => ({
+    key: d.key,
+    label: d.label,
+    ...((wh.days[d.key]) || { active: false, start: "", end: "" })
+  }));
+
+  const groups = [];
+  let current = null;
+  for (let i = 0; i < ordered.length; i++) {
+    const day = ordered[i];
+    if (!day.active) { if (current) { groups.push(current); current = null; } continue; }
+    if (current && current.endIdx === i - 1 && current.start === day.start && current.end === day.end) {
+      current.endLabel = day.label;
+      current.endIdx = i;
+    } else {
+      if (current) groups.push(current);
+      current = {
+        startLabel: day.label, endLabel: day.label,
+        start: day.start, end: day.end,
+        startIdx: i, endIdx: i
+      };
+    }
+  }
+  if (current) groups.push(current);
+
+  return groups.map(g => {
+    const days = (g.startLabel === g.endLabel) ? g.startLabel : `${g.startLabel}-${g.endLabel}`;
+    return `${days} ${formatWHTime(g.start)}-${formatWHTime(g.end)}`;
+  }).join(", ");
 }
 
 function applySignoffSelection(prefix, value) {
@@ -210,6 +316,27 @@ function wireEvents() {
     sel.addEventListener("change", () => {
       const wrap = document.getElementById(prefix === "newSignoff" ? "newCustom-wrap" : "replyCustom-wrap");
       wrap.style.display = sel.value === "custom" ? "block" : "none";
+    });
+  });
+
+  // Working hours: master toggle expands/collapses the day list.
+  const whToggle = document.getElementById("wh-show");
+  if (whToggle) {
+    whToggle.addEventListener("change", () => {
+      const list = document.getElementById("wh-days-list");
+      if (list) list.style.display = whToggle.checked ? "block" : "none";
+    });
+  }
+
+  // Each day checkbox enables/disables its time inputs in lockstep.
+  WH_DAYS.forEach(d => {
+    const cb = document.getElementById("wh-" + d.key);
+    if (!cb) return;
+    cb.addEventListener("change", () => {
+      const startEl = document.getElementById("wh-" + d.key + "-start");
+      const endEl   = document.getElementById("wh-" + d.key + "-end");
+      if (startEl) startEl.disabled = !cb.checked;
+      if (endEl)   endEl.disabled   = !cb.checked;
     });
   });
 
@@ -252,6 +379,10 @@ function savePreferences() {
     } else {
       settings.set("jobTitleOverride", "");
     }
+
+    // Working hours — stored as JSON so launchevent.js can re-apply
+    // the same compaction logic on every compose.
+    settings.set("workingHours", JSON.stringify(collectWorkingHours()));
 
     settings.saveAsync((result) => {
       resolve(result.status === Office.AsyncResultStatus.Succeeded);
@@ -332,6 +463,22 @@ function buildSignature() {
 </p>`
     : "";
 
+  // Working hours line: italic, smaller than role, NCC green. Sits under
+  // role and above contact details. Compaction collapses runs of identical
+  // hours so the line stays short.
+  const whLive = (typeof collectWorkingHours === "function") ? collectWorkingHours() : null;
+  let whSource = whLive;
+  if (!whSource) {
+    try { whSource = JSON.parse(settings.get("workingHours") || "null"); }
+    catch (e) { whSource = null; }
+  }
+  const whText = compactWorkingHours(whSource);
+  const whPara = whText
+    ? `<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
+  <em><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#005953;">${whText}</span></em>
+</p>`
+    : "";
+
   // signoff "" = staff picked "None" — skip the sign-off paragraph
   // entirely so we don't render a lone comma above the name.
   const signoffPara = signoff
@@ -346,6 +493,7 @@ ${signoffPara}
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#ec3426;">${fullName}</span></strong>
 </p>
 ${rolePara}
+${whPara}
 <p style="margin:0pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">E: </span></strong><strong><u><a href="mailto:${mail}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${mail}</a></u></strong>${extLine}${phoneLine}
 </p>

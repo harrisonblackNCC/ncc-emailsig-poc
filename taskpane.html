@@ -151,6 +151,105 @@
 
     .status.error { color: #ec3426; }
 
+    /* Working hours block */
+    .wh-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .wh-toggle-row .wh-toggle-text {
+      font-size: 12px;
+      color: #333;
+      flex: 1;
+      min-width: 0;
+    }
+    .wh-toggle-row .wh-toggle-text .wh-sub {
+      font-size: 10px;
+      color: #999;
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+    .toggle {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle .slider {
+      position: absolute;
+      inset: 0;
+      background: #ccc;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .toggle .slider::before {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.15s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .toggle input:checked + .slider { background: #005953; }
+    .toggle input:checked + .slider::before { transform: translateX(16px); }
+
+    .wh-days {
+      margin-top: 10px;
+      padding: 8px 10px;
+      background: #fafafa;
+      border: 1px solid #eee;
+      border-radius: 4px;
+    }
+    .wh-day {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 0;
+    }
+    .wh-day input[type="checkbox"] {
+      flex-shrink: 0;
+      margin: 0;
+      accent-color: #005953;
+      cursor: pointer;
+    }
+    .wh-day .wh-label {
+      flex: 0 0 38px;
+      font-size: 11.5px;
+      color: #444;
+      cursor: pointer;
+      user-select: none;
+    }
+    .wh-day input[type="time"] {
+      flex: 1;
+      min-width: 0;
+      padding: 5px 6px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 11.5px;
+      color: #333;
+      background: #fff;
+    }
+    .wh-day input[type="time"]:focus { border-color: #005953; outline: none; }
+    .wh-day input[type="time"]:disabled {
+      background: #f0f0f0;
+      color: #aaa;
+      cursor: not-allowed;
+    }
+    .wh-day .wh-dash {
+      flex-shrink: 0;
+      color: #999;
+      font-size: 11px;
+    }
+
     .loading {
       padding: 24px 16px;
       text-align: center;
@@ -242,6 +341,66 @@
       </select>
       <div class="custom-input-wrap" id="replyCustom-wrap" style="display:none;">
         <input type="text" id="replySignoff-custom" placeholder="e.g. Cheers" maxlength="50" />
+      </div>
+
+      <div class="sub-heading" style="margin-top:18px;">Working Hours</div>
+      <div class="wh-toggle-row">
+        <div class="wh-toggle-text">
+          Display working days/hours
+          <div class="wh-sub">Shows compacted, e.g. "Tuesday-Thursday 9am-2pm".</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="wh-show" /><span class="slider"></span></label>
+      </div>
+      <div class="wh-days" id="wh-days-list" style="display:none;">
+        <div class="wh-day" data-day="mon">
+          <input type="checkbox" id="wh-mon" />
+          <label class="wh-label" for="wh-mon">Mon</label>
+          <input type="time" id="wh-mon-start" value="09:00" disabled />
+          <span class="wh-dash">&ndash;</span>
+          <input type="time" id="wh-mon-end" value="17:00" disabled />
+        </div>
+        <div class="wh-day" data-day="tue">
+          <input type="checkbox" id="wh-tue" />
+          <label class="wh-label" for="wh-tue">Tue</label>
+          <input type="time" id="wh-tue-start" value="09:00" disabled />
+          <span class="wh-dash">&ndash;</span>
+          <input type="time" id="wh-tue-end" value="17:00" disabled />
+        </div>
+        <div class="wh-day" data-day="wed">
+          <input type="checkbox" id="wh-wed" />
+          <label class="wh-label" for="wh-wed">Wed</label>
+          <input type="time" id="wh-wed-start" value="09:00" disabled />
+          <span class="wh-dash">&ndash;</span>
+          <input type="time" id="wh-wed-end" value="17:00" disabled />
+        </div>
+        <div class="wh-day" data-day="thu">
+          <input type="checkbox" id="wh-thu" />
+          <label class="wh-label" for="wh-thu">Thu</label>
+          <input type="time" id="wh-thu-start" value="09:00" disabled />
+          <span class="wh-dash">&ndash;</span>
+          <input type="time" id="wh-thu-end" value="17:00" disabled />
+        </div>
+        <div class="wh-day" data-day="fri">
+          <input type="checkbox" id="wh-fri" />
+          <label class="wh-label" for="wh-fri">Fri</label>
+          <input type="time" id="wh-fri-start" value="09:00" disabled />
+          <span class="wh-dash">&ndash;</span>
+          <input type="time" id="wh-fri-end" value="17:00" disabled />
+        </div>
+        <div class="wh-day" data-day="sat">
+          <input type="checkbox" id="wh-sat" />
+          <label class="wh-label" for="wh-sat">Sat</label>
+          <input type="time" id="wh-sat-start" value="09:00" disabled />
+          <span class="wh-dash">&ndash;</span>
+          <input type="time" id="wh-sat-end" value="17:00" disabled />
+        </div>
+        <div class="wh-day" data-day="sun">
+          <input type="checkbox" id="wh-sun" />
+          <label class="wh-label" for="wh-sun">Sun</label>
+          <input type="time" id="wh-sun-start" value="09:00" disabled />
+          <span class="wh-dash">&ndash;</span>
+          <input type="time" id="wh-sun-end" value="17:00" disabled />
+        </div>
       </div>
     </div>
 

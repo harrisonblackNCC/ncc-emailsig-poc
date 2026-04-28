@@ -58,7 +58,13 @@ async function onNewMessageComposeHandler(event) {
     const signoff  = isReplyContext(item) ? replySignoff : newSignoff;
     const fullName = title ? `${title} ${displayName}` : displayName;
 
-    const sig = buildSignature({ signoff, fullName, jobTitle, mail, ext, phone });
+    // Working hours: parse the JSON the taskpane saved + compact for display.
+    let wh = null;
+    try { wh = JSON.parse(settings.get("workingHours") || "null"); }
+    catch (e) { wh = null; }
+    const whText = compactWorkingHours(wh);
+
+    const sig = buildSignature({ signoff, fullName, jobTitle, mail, ext, phone, whText });
 
     item.body.setSignatureAsync(
       sig,
@@ -130,8 +136,61 @@ function isReplyContext(item) {
   return false;
 }
 
+/* ── Working hours helpers (kept identical to taskpane.js) ──────────── */
+const WH_DAYS_LE = [
+  { key: "mon", label: "Monday" },
+  { key: "tue", label: "Tuesday" },
+  { key: "wed", label: "Wednesday" },
+  { key: "thu", label: "Thursday" },
+  { key: "fri", label: "Friday" },
+  { key: "sat", label: "Saturday" },
+  { key: "sun", label: "Sunday" }
+];
+
+function formatWHTime(t) {
+  if (!t || typeof t !== "string" || !t.includes(":")) return t || "";
+  const [hStr, mStr] = t.split(":");
+  const h = parseInt(hStr, 10);
+  const m = parseInt(mStr, 10);
+  if (isNaN(h) || isNaN(m)) return t;
+  const period = h < 12 ? "am" : "pm";
+  const h12 = ((h + 11) % 12) + 1;
+  return m === 0 ? `${h12}${period}` : `${h12}:${String(m).padStart(2, "0")}${period}`;
+}
+
+function compactWorkingHours(wh) {
+  if (!wh || !wh.show || !wh.days) return "";
+  const ordered = WH_DAYS_LE.map(d => ({
+    key: d.key,
+    label: d.label,
+    ...((wh.days[d.key]) || { active: false, start: "", end: "" })
+  }));
+  const groups = [];
+  let current = null;
+  for (let i = 0; i < ordered.length; i++) {
+    const day = ordered[i];
+    if (!day.active) { if (current) { groups.push(current); current = null; } continue; }
+    if (current && current.endIdx === i - 1 && current.start === day.start && current.end === day.end) {
+      current.endLabel = day.label;
+      current.endIdx = i;
+    } else {
+      if (current) groups.push(current);
+      current = {
+        startLabel: day.label, endLabel: day.label,
+        start: day.start, end: day.end,
+        startIdx: i, endIdx: i
+      };
+    }
+  }
+  if (current) groups.push(current);
+  return groups.map(g => {
+    const days = (g.startLabel === g.endLabel) ? g.startLabel : `${g.startLabel}-${g.endLabel}`;
+    return `${days} ${formatWHTime(g.start)}-${formatWHTime(g.end)}`;
+  }).join(", ");
+}
+
 /* ── Signature HTML (kept identical to taskpane.js buildSignature) ──── */
-function buildSignature({ signoff, fullName, jobTitle, mail, ext, phone }) {
+function buildSignature({ signoff, fullName, jobTitle, mail, ext, phone, whText }) {
   const extLine = ext
     ? ` <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">| Ext: </span></strong><strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;">${ext}</span></strong>`
     : "";
@@ -150,6 +209,14 @@ function buildSignature({ signoff, fullName, jobTitle, mail, ext, phone }) {
 </p>`
     : "";
 
+  // Working hours line: italic, smaller than role, NCC green. Sits under
+  // role and above contact details. Skipped when blank.
+  const whPara = whText
+    ? `<p style="margin:0pt;line-height:normal;background-color:#ffffff;">
+  <em><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:9pt;color:#005953;">${whText}</span></em>
+</p>`
+    : "";
+
   // signoff "" = staff picked "None" — skip the sign-off paragraph
   // entirely so we don't render a lone comma above the name.
   const signoffPara = signoff
@@ -164,6 +231,7 @@ ${signoffPara}
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;font-size:11pt;color:#ec3426;">${fullName}</span></strong>
 </p>
 ${rolePara}
+${whPara}
 <p style="margin:0pt;line-height:normal;font-size:9pt;background-color:#ffffff;">
   <strong><span style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#005953;">E: </span></strong><strong><u><a href="mailto:${mail}" style="font-family:Aptos,Calibri,Helvetica,Arial,sans-serif;color:#000000;text-decoration:underline;">${mail}</a></u></strong>${extLine}${phoneLine}
 </p>
