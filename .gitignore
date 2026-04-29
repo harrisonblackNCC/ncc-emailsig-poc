@@ -1,0 +1,11 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# npm noise (we don't actually have a node project, but defensive)
+node_modules/
+package-lock.json

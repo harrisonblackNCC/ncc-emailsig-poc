@@ -8,13 +8,14 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html, body { height: 100%; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
       background: #f4f4f4;
       color: #333;
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow: hidden;       /* internal panels handle their own scroll */
     }
 
     .top-bar {
@@ -218,6 +219,19 @@
       overflow-y: auto;
       background: #f4f4f4;
     }
+    /* Sticky header — h1 + subtitle + both mode toggles stay pinned to the
+       top of the preview pane while the email mock scrolls below them. */
+    .preview-pane .preview-header {
+      position: sticky;
+      top: -28px;     /* cancels the pane's top padding so it pins flush */
+      background: #f4f4f4;
+      padding-top: 28px;
+      margin: -28px -36px 0;
+      padding-left: 36px;
+      padding-right: 36px;
+      padding-bottom: 4px;
+      z-index: 5;
+    }
 
     .preview-pane h1 {
       font-size: 18px;
@@ -377,6 +391,20 @@
     .toggle input:checked + .slider { background: #005953; }
     .toggle input:checked + .slider::before { transform: translateX(16px); }
 
+    /* NCC-only sections — hidden when previewing a non-NCC org so
+       admin isn't editing fields that don't apply to what they see. */
+    body.preview-not-ncc .ncc-only { display: none; }
+    .non-ncc-banner {
+      display: none;
+      padding: 12px 22px;
+      background: #fbfaf5;
+      border-bottom: 1px solid #f0e6c8;
+      font-size: 11.5px;
+      color: #6b5a1f;
+      line-height: 1.5;
+    }
+    body.preview-not-ncc .non-ncc-banner { display: block; }
+
     /* Signature variants */
     .variant-row {
       display: flex;
@@ -437,7 +465,11 @@
     <!-- LEFT: admin form -->
     <aside class="admin-form">
 
-      <div class="section">
+      <div class="non-ncc-banner" id="non-ncc-banner">
+        <strong>Heads up:</strong> You're previewing <span id="non-ncc-banner-org">a non-NCC theme</span>. Fields specific to the Nambour Christian College theme (college name, address, contact details, labels) are hidden — switch back to <em>Nambour Christian College</em> at the top of the preview to edit them.
+      </div>
+
+      <div class="section ncc-only">
         <div class="section-label">College Branding</div>
 
         <label class="field-label" for="cfg-college-name">College name</label>
@@ -461,7 +493,7 @@
         <div class="hint">The URL every staff member's signature actually points at. Upload your new image to this path in WordPress to go live.</div>
       </div>
 
-      <div class="section">
+      <div class="section ncc-only">
         <div class="section-label">Contact Details</div>
 
         <label class="field-label" for="cfg-address">Street address</label>
@@ -509,7 +541,7 @@ Dr
 Rev</textarea>
       </div>
 
-      <div class="section">
+      <div class="section ncc-only">
         <div class="section-label">Inline Labels</div>
         <div class="hint">Little tags that appear next to each contact field in the signature.</div>
 
@@ -632,17 +664,19 @@ Rev</textarea>
 
     <!-- RIGHT: live preview -->
     <main class="preview-pane">
-      <h1>Live Preview</h1>
-      <p class="subtitle">Signature below updates as you edit. Staff name, role and email are pulled from M365 in production — faked here for the demo.</p>
+      <div class="preview-header">
+        <h1>Live Preview</h1>
+        <p class="subtitle">Signature below updates as you edit. Staff name, role and email are pulled from M365 in production — faked here for the demo.</p>
 
-      <div class="mode-toggle">
-        <button id="mode-new" class="active" data-mode="new">New message</button>
-        <button id="mode-reply" data-mode="reply">Reply</button>
-      </div>
+        <div class="mode-toggle">
+          <button id="mode-new" class="active" data-mode="new">New message</button>
+          <button id="mode-reply" data-mode="reply">Reply</button>
+        </div>
 
-      <div class="mode-toggle" style="margin-left: 8px;">
-        <button id="org-ncc" class="active" data-org="ncc">Nambour Christian College</button>
-        <button id="org-group" data-org="group">NCC Education Group</button>
+        <div class="mode-toggle" style="margin-left: 8px;">
+          <button id="org-ncc" class="active" data-org="ncc">Nambour Christian College</button>
+          <button id="org-group" data-org="group">NCC Education Group</button>
+        </div>
       </div>
 
       <div class="email-mock">
@@ -758,6 +792,7 @@ Rev</textarea>
           document.querySelectorAll('[data-org]').forEach(b => b.classList.remove("active"));
           nccBtn.classList.add("active");
         }
+        refreshNonNccVisibility();
       }
       rebuildOrgToggle();
       render();
@@ -814,6 +849,7 @@ Rev</textarea>
           container.querySelectorAll("button").forEach(b => b.classList.remove("active"));
           btn.classList.add("active");
           currentOrg = v.key;
+          refreshNonNccVisibility();
           render();
         });
         container.appendChild(btn);
@@ -1099,9 +1135,27 @@ ${schoolDetailsBlock}
         btn.classList.add("active");
         if (btn.dataset.mode) currentMode = btn.dataset.mode;
         if (btn.dataset.org)  currentOrg  = btn.dataset.org;
+        refreshNonNccVisibility();
         render();
       });
     });
+
+    // Hide NCC-only form sections when previewing a different org so the
+    // admin isn't editing fields that don't apply to what's on screen.
+    function refreshNonNccVisibility() {
+      const isNcc = currentOrg === "ncc";
+      document.body.classList.toggle("preview-not-ncc", !isNcc);
+      const label = document.getElementById("non-ncc-banner-org");
+      if (label) {
+        if (currentOrg === "group") {
+          label.textContent = "the NCC Education Group theme";
+        } else {
+          // Variant — look up its display name.
+          const v = (typeof variants !== "undefined") ? variants.find(x => x.key === currentOrg) : null;
+          label.textContent = v ? `the “${v.displayName}” variant` : "a variant theme";
+        }
+      }
+    }
 
     // File upload handling (click + drag/drop)
     const fileInput = document.getElementById("cfg-logo-file");
